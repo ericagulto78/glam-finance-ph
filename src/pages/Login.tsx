@@ -30,6 +30,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signupError, setSignupError] = useState('');
+  const [networkError, setNetworkError] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signInWithGoogle, userStatus } = useAuth();
@@ -43,6 +44,7 @@ const Login = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNetworkError(false);
     
     if (!email || !password) {
       toast({
@@ -69,11 +71,23 @@ const Login = () => {
       
       // Let the auth context handle the redirect based on approval status
     } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message || "An error occurred during sign in",
-        variant: "destructive",
-      });
+      console.error('Sign in error:', error);
+      
+      // Check if it's a network error
+      if (error.message === 'Failed to fetch') {
+        setNetworkError(true);
+        toast({
+          title: "Network error",
+          description: "Unable to connect to authentication service. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sign in failed",
+          description: error.message || "An error occurred during sign in",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -82,11 +96,21 @@ const Login = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setSignupError('');
+    setNetworkError(false);
     
     if (!email || !password) {
       toast({
         title: "Error",
         description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
         variant: "destructive",
       });
       return;
@@ -127,7 +151,16 @@ const Login = () => {
         });
       }
     } catch (error: any) {
-      setSignupError(error.message || "An error occurred during sign up");
+      console.error('Sign up error:', error);
+      
+      // Check if it's a network error
+      if (error.message === 'Failed to fetch') {
+        setNetworkError(true);
+        setSignupError("Network error: Unable to connect to authentication service. Please check your internet connection and try again.");
+      } else {
+        setSignupError(error.message || "An error occurred during sign up");
+      }
+      
       toast({
         title: "Sign up failed",
         description: error.message || "An error occurred during sign up",
@@ -140,8 +173,13 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      setNetworkError(false);
       await signInWithGoogle();
     } catch (error: any) {
+      console.error('Google sign in error:', error);
+      if (error.message === 'Failed to fetch') {
+        setNetworkError(true);
+      }
       toast({
         title: "Google sign in failed",
         description: error.message || "An error occurred during Google sign in",
@@ -163,6 +201,15 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {networkError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Network error: Unable to connect to the authentication service. Please check your internet connection and Supabase configuration.
+              </AlertDescription>
+            </Alert>
+          )}
+        
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="signin">Sign In</TabsTrigger>

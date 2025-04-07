@@ -1,15 +1,10 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User, Provider } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase, ADMIN_EMAIL, isAdmin } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 type UserStatus = 'pending' | 'approved' | 'rejected';
-
-type UserMetadata = {
-  status?: UserStatus;
-};
 
 type AuthContextType = {
   session: Session | null;
@@ -33,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
+  
   const checkUserApprovalStatus = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -63,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error('Auth session error:', error.message);
           throw error;
         }
         
@@ -141,9 +137,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Google sign in error:', error.message);
+        throw error;
+      }
       
     } catch (error: any) {
+      console.error('Google sign in exception:', error);
       toast({
         title: "Google sign in failed",
         description: error.message || "An error occurred during Google sign in",

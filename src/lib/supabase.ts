@@ -1,11 +1,20 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Using environment variables or fallback to demo values
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-supabase-project-url.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-supabase-anon-key';
+// Using environment variables with more robust fallbacks
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Check if the required environment variables are set
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase URL or Anon Key is missing. Authentication will not work properly.');
+}
+
+// Create the Supabase client with the URL and key
+export const supabase = createClient(
+  supabaseUrl || 'https://your-supabase-project-url.supabase.co',
+  supabaseAnonKey || 'your-supabase-anon-key'
+);
 
 // Set admin email for the application
 export const ADMIN_EMAIL = 'ericagulto@gmail.com';
