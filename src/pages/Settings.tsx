@@ -27,14 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar, Bell, Mail, Calendar as CalendarIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
+import { Calendar, Bell, Mail, Calendar as CalendarIcon, User, Shield, UserPlus } from 'lucide-react';
 
 const Settings = () => {
   const { toast } = useToast();
+  const { user, isAdmin, signInWithGoogle } = useAuth();
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [googleCalendarEnabled, setGoogleCalendarEnabled] = useState(false);
   const [emailReportFrequency, setEmailReportFrequency] = useState('weekly');
   const [reminderTime, setReminderTime] = useState('24');
+  const [googleConnected, setGoogleConnected] = useState(!!user?.app_metadata?.provider === 'google');
   
   const handleSaveReminders = () => {
     toast({
@@ -64,6 +68,19 @@ const Settings = () => {
     });
   };
 
+  const handleConnectWithGoogle = async () => {
+    try {
+      await signInWithGoogle();
+      setGoogleConnected(true);
+    } catch (error: any) {
+      toast({
+        title: "Google connection failed",
+        description: error.message || "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="h-full">
       <PageHeader 
@@ -73,7 +90,7 @@ const Settings = () => {
 
       <div className="p-6">
         <Tabs defaultValue="reminders" className="space-y-6">
-          <TabsList className="grid grid-cols-3 w-full max-w-md">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="reminders" className="flex items-center gap-2">
               <Bell size={16} />
               <span>Reminders</span>
@@ -86,6 +103,16 @@ const Settings = () => {
               <Mail size={16} />
               <span>Reports</span>
             </TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2">
+              <User size={16} />
+              <span>Account</span>
+            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Shield size={16} />
+                <span>Admin</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Reminders Tab */}
@@ -216,7 +243,7 @@ const Settings = () => {
                     id="report-email"
                     type="email"
                     placeholder="Enter your email address"
-                    defaultValue="manager@example.com"
+                    defaultValue={user?.email || ""}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Reports will be sent to this email address
@@ -228,6 +255,102 @@ const Settings = () => {
               </CardFooter>
             </Card>
           </TabsContent>
+
+          {/* Account Settings Tab */}
+          <TabsContent value="account">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Settings</CardTitle>
+                <CardDescription>
+                  Manage your account and connected services
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-base">Google Account</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Connect your Google account for easier sign-in and integrations
+                    </p>
+                  </div>
+                  
+                  {googleConnected ? (
+                    <div className="bg-green-50 text-green-700 p-3 rounded-md flex items-center justify-between">
+                      <span className="text-sm">
+                        <UserPlus className="h-4 w-4 inline mr-2" />
+                        Your Google account is connected
+                      </span>
+                    </div>
+                  ) : (
+                    <Button onClick={handleConnectWithGoogle} variant="outline" className="flex gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 48 48">
+                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12
+                          s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20
+                          s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657
+                          C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36
+                          c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571
+                          c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                      </svg>
+                      Connect Google Account
+                    </Button>
+                  )}
+                  
+                  <Alert>
+                    <AlertDescription className="text-sm">
+                      Connecting your Google account allows seamless integration with Google Calendar
+                      and simplifies sign-in. Your data remains secure and private.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Admin Settings Tab (Only for admin users) */}
+          {isAdmin && (
+            <TabsContent value="admin">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Administrator Settings</CardTitle>
+                  <CardDescription>
+                    Manage user accounts and system settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-medium">Pending User Approvals</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Review and approve new user sign-ups
+                        </p>
+                      </div>
+                      <Button variant="outline" onClick={() => {
+                        toast({
+                          title: "Coming Soon",
+                          description: "User approval management will be available in the next update.",
+                        });
+                      }}>
+                        Manage Users
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Alert>
+                    <AlertDescription className="text-sm">
+                      As an administrator, you can approve or reject new user sign-ups.
+                      This helps maintain control over who has access to your business data.
+                      <br /><br />
+                      <strong>Current administrator:</strong> {ADMIN_EMAIL}
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

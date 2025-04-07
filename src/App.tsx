@@ -80,6 +80,13 @@ const App = () => (
                 </MainLayout>
               </ProtectedRoute>
             } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute requireAdmin={true}>
+                <MainLayout>
+                  <h1>User Management (Coming Soon)</h1>
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

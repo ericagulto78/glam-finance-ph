@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import Logo from '@/components/Logo';
@@ -20,15 +20,26 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { Mail, Lock, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { supabase, ADMIN_EMAIL } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [signupError, setSignupError] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, signInWithGoogle, userStatus } = useAuth();
+
+  // Redirect if user is already logged in and approved
+  useEffect(() => {
+    if (user && userStatus === 'approved') {
+      navigate('/');
+    }
+  }, [user, userStatus, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +67,7 @@ const Login = () => {
         description: "You have successfully signed in.",
       });
       
-      navigate('/');
+      // Let the auth context handle the redirect based on approval status
     } catch (error: any) {
       toast({
         title: "Sign in failed",
@@ -70,6 +81,7 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupError('');
     
     if (!email || !password) {
       toast({
@@ -82,18 +94,40 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
       
-      toast({
-        title: "Account created",
-        description: "Please check your email for verification link.",
-      });
+      if (authData?.user) {
+        // Create user profile with pending status
+        // Only admins are automatically approved
+        const isAdminUser = email === ADMIN_EMAIL;
+        
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert([
+            { 
+              user_id: authData.user.id,
+              email: email,
+              status: isAdminUser ? 'approved' : 'pending'
+            }
+          ]);
+        
+        if (profileError) throw profileError;
+        
+        toast({
+          title: isAdminUser ? "Admin account created" : "Account pending approval",
+          description: isAdminUser 
+            ? "Admin account created successfully."
+            : "Your account has been created and is pending administrator approval.",
+        });
+      }
     } catch (error: any) {
+      setSignupError(error.message || "An error occurred during sign up");
       toast({
         title: "Sign up failed",
         description: error.message || "An error occurred during sign up",
@@ -101,6 +135,18 @@ const Login = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      toast({
+        title: "Google sign in failed",
+        description: error.message || "An error occurred during Google sign in",
+        variant: "destructive",
+      });
     }
   };
 
@@ -173,6 +219,12 @@ const Login = () => {
             
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
+                {signupError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{signupError}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <div className="relative">
@@ -204,6 +256,13 @@ const Login = () => {
                     Password must be at least 6 characters
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Alert>
+                    <AlertDescription className="text-xs">
+                      New accounts require administrator approval before access is granted.
+                    </AlertDescription>
+                  </Alert>
+                </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
@@ -229,12 +288,12 @@ const Login = () => {
               </span>
             </div>
           </div>
-          <Button variant="outline" className="w-full" onClick={() => {
-            toast({
-              title: "Google sign in",
-              description: "Google authentication will be implemented in a future update.",
-            });
-          }}>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleGoogleSignIn}
+            type="button"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" viewBox="0 0 48 48">
               <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12
                 s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20
