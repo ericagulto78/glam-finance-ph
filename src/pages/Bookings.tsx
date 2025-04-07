@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter, Calendar, User, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -6,6 +5,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
