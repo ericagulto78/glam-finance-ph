@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Calendar, User, DollarSign } from 'lucide-react';
+import { Plus, Search, Filter, Calendar, User, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
 interface Booking {
   id: string;
@@ -97,8 +114,11 @@ const statusColors = {
 };
 
 const Bookings = () => {
-  const [bookings] = useState<Booking[]>(BOOKINGS_DATA);
+  const [bookings, setBookings] = useState<Booking[]>(BOOKINGS_DATA);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleAddBooking = () => {
@@ -106,6 +126,28 @@ const Bookings = () => {
       title: "Add booking feature",
       description: "This feature will be implemented in a future update.",
     });
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedBooking) {
+      const updatedBookings = bookings.filter(booking => booking.id !== selectedBooking.id);
+      setBookings(updatedBookings);
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: "Booking deleted",
+        description: `Booking for ${selectedBooking.client} has been deleted.`,
+      });
+    }
   };
 
   const filteredBookings = bookings.filter(booking => 
@@ -171,12 +213,13 @@ const Bookings = () => {
                     <TableHead>Location</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Status</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredBookings.length > 0 ? (
                     filteredBookings.map((booking) => (
-                      <TableRow key={booking.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableRow key={booking.id} className="hover:bg-muted/50">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -210,11 +253,31 @@ const Bookings = () => {
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                           </Badge>
                         </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDeleteBooking(booking)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
+                      <TableCell colSpan={6} className="h-24 text-center">
                         No bookings found.
                       </TableCell>
                     </TableRow>
@@ -225,6 +288,114 @@ const Bookings = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this booking? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Booking Dialog - Placeholder for now */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Edit Booking</DialogTitle>
+            <DialogDescription>
+              Update the booking details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="client">Client Name</Label>
+                <Input 
+                  id="client" 
+                  defaultValue={selectedBooking?.client} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="service">Service</Label>
+                <Input 
+                  id="service" 
+                  defaultValue={selectedBooking?.service} 
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input 
+                  id="date" 
+                  type="date" 
+                  defaultValue={selectedBooking?.date} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time">Time</Label>
+                <Input 
+                  id="time" 
+                  defaultValue={selectedBooking?.time} 
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input 
+                id="location" 
+                defaultValue={selectedBooking?.location} 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount (₱)</Label>
+                <Input 
+                  id="amount" 
+                  type="number" 
+                  defaultValue={selectedBooking?.amount.toString()} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select defaultValue={selectedBooking?.status}>
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={() => {
+              setIsEditDialogOpen(false);
+              toast({
+                title: "Booking updated",
+                description: "The booking has been successfully updated.",
+              });
+            }}>
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
