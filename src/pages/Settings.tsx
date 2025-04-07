@@ -30,6 +30,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Bell, Mail, Calendar as CalendarIcon, User, Shield, UserPlus } from 'lucide-react';
+import { ADMIN_EMAIL } from '@/lib/supabase';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -38,7 +39,7 @@ const Settings = () => {
   const [googleCalendarEnabled, setGoogleCalendarEnabled] = useState(false);
   const [emailReportFrequency, setEmailReportFrequency] = useState('weekly');
   const [reminderTime, setReminderTime] = useState('24');
-  const [googleConnected, setGoogleConnected] = useState(!!user?.app_metadata?.provider === 'google');
+  const [googleConnected, setGoogleConnected] = useState(user?.app_metadata?.provider === 'google');
   
   const handleSaveReminders = () => {
     toast({
