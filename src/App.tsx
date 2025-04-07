@@ -10,6 +10,7 @@ import Bookings from "./pages/Bookings";
 import Expenses from "./pages/Expenses";
 import Invoices from "./pages/Invoices";
 import Taxes from "./pages/Taxes";
+import BankAccount from "./pages/BankAccount";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,11 @@ const App = () => (
           <Route path="/taxes" element={
             <MainLayout>
               <Taxes />
+            </MainLayout>
+          } />
+          <Route path="/bank-accounts" element={
+            <MainLayout>
+              <BankAccount />
             </MainLayout>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

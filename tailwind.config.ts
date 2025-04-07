@@ -67,7 +67,12 @@ export default {
 					DEFAULT: '#C9A87A',
 					light: '#E0CEAA',
 					dark: '#8A734F'
-				}
+				},
+				rose: {
+          DEFAULT: '#FDC5C5',
+          light: '#FFE2E2',
+          dark: '#F5A3A3'
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
