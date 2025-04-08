@@ -32,17 +32,25 @@ const SignInForm = ({ email, setEmail, password, setPassword }: SignInFormProps)
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log("Attempting login with:", { email, password: '****' });
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
       
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
+      if (data?.user) {
+        console.log("Login successful:", data.user.id);
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+      }
     } catch (error: any) {
       console.error('Sign in error:', error);
       
@@ -56,7 +64,7 @@ const SignInForm = ({ email, setEmail, password, setPassword }: SignInFormProps)
       } else {
         toast({
           title: "Sign in failed",
-          description: error.message || "An error occurred during sign in",
+          description: error.message || "Invalid email or password. Please check your credentials and try again.",
           variant: "destructive",
         });
       }

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, isAdmin } from '@/integrations/supabase/client';
@@ -30,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       
       try {
+        console.log("Getting initial session...");
         // Get current session
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -38,13 +38,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw error;
         }
         
+        console.log("Session data:", session ? "Session exists" : "No session");
         setSession(session);
         
         if (session?.user) {
+          console.log("User found in session:", session.user.email);
           setUser(session.user);
           
           // Check if user is admin
           const userIsAdmin = isAdmin(session.user.email);
+          console.log("Is admin:", userIsAdmin);
           setIsCurrentUserAdmin(userIsAdmin);
           
           // If admin, automatically approved
@@ -53,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else {
             // Check approval status
             const status = await checkUserApprovalStatus(session.user.id);
+            console.log("User approval status:", status);
             setUserStatus(status);
           }
         } else {
@@ -69,10 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log("Auth state change event:", event);
         setSession(session);
         
         if (session?.user) {
+          console.log("User authenticated:", session.user.email);
           setUser(session.user);
           
           // Check if user is admin
@@ -87,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setTimeout(async () => {
               // Check approval status
               const status = await checkUserApprovalStatus(session.user.id);
+              console.log("User status from check:", status);
               setUserStatus(status);
             }, 0);
           }
