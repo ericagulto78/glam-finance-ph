@@ -1,54 +1,29 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, ADMIN_EMAIL, isAdmin } from '@/integrations/supabase/client';
+import { supabase, isAdmin } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
-
-type UserStatus = 'pending' | 'approved' | 'rejected';
-
-type AuthContextType = {
-  session: Session | null;
-  user: User | null;
-  userStatus: UserStatus;
-  loading: boolean;
-  isAdmin: boolean;
-  signOut: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  approveUser: (userId: string) => Promise<void>;
-  rejectUser: (userId: string) => Promise<void>;
-};
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { AuthContextType } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [userStatus, setUserStatus] = useState<UserStatus>('pending');
   const [loading, setLoading] = useState(true);
   const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const checkUserApprovalStatus = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('status')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return 'pending' as UserStatus;
-      }
-
-      return (data?.status || 'pending') as UserStatus;
-    } catch (error) {
-      console.error('Error in checkUserApprovalStatus:', error);
-      return 'pending' as UserStatus;
-    }
-  };
+  const { 
+    userStatus, 
+    setUserStatus, 
+    checkUserApprovalStatus, 
+    approveUser: approveUserProfile,
+    rejectUser: rejectUserProfile
+  } = useUserProfile();
 
   useEffect(() => {
     async function getInitialSession() {
@@ -129,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkUserApprovalStatus, setUserStatus]);
 
   const signInWithGoogle = async () => {
     try {
@@ -178,23 +153,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Only administrators can approve users");
       }
 
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ status: 'approved' })
-        .eq('user_id', userId);
-      
-      if (error) throw error;
+      await approveUserProfile(userId);
       
       toast({
         title: "User approved",
         description: "The user has been approved and can now access the system.",
       });
-      
-      // If approving the current user, update state
-      if (user?.id === userId) {
-        setUserStatus('approved');
-      }
-      
     } catch (error: any) {
       toast({
         title: "Approval failed",
@@ -210,23 +174,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Only administrators can reject users");
       }
       
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ status: 'rejected' })
-        .eq('user_id', userId);
-      
-      if (error) throw error;
+      await rejectUserProfile(userId);
       
       toast({
         title: "User rejected",
         description: "The user has been rejected and cannot access the system.",
       });
-      
-      // If rejecting the current user, update state
-      if (user?.id === userId) {
-        setUserStatus('rejected');
-      }
-      
     } catch (error: any) {
       toast({
         title: "Rejection failed",
