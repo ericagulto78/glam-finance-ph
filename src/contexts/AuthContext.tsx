@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, ADMIN_EMAIL, isAdmin } from '@/lib/supabase';
+import { supabase, ADMIN_EMAIL, isAdmin } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -91,9 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     
-    getInitialSession();
-    
-    // Set up auth state listener
+    // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
@@ -109,19 +108,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (userIsAdmin) {
             setUserStatus('approved');
           } else {
-            // Check approval status
-            const status = await checkUserApprovalStatus(session.user.id);
-            setUserStatus(status);
+            // Use setTimeout to prevent Supabase auth deadlock
+            setTimeout(async () => {
+              // Check approval status
+              const status = await checkUserApprovalStatus(session.user.id);
+              setUserStatus(status);
+            }, 0);
           }
         } else {
           setUser(null);
           setUserStatus('pending');
           setIsCurrentUserAdmin(false);
         }
-        
-        setLoading(false);
       }
     );
+    
+    // Then check for existing session
+    getInitialSession();
     
     return () => {
       subscription.unsubscribe();

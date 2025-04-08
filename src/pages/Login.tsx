@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,7 +20,7 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
-import { supabase, ADMIN_EMAIL } from '@/lib/supabase';
+import { supabase, ADMIN_EMAIL } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -74,7 +73,7 @@ const Login = () => {
       console.error('Sign in error:', error);
       
       // Check if it's a network error
-      if (error.message === 'Failed to fetch') {
+      if (error.message?.includes('fetch') || error.message === 'Failed to fetch' || error.message?.includes('network')) {
         setNetworkError(true);
         toast({
           title: "Network error",
@@ -154,7 +153,7 @@ const Login = () => {
       console.error('Sign up error:', error);
       
       // Check if it's a network error
-      if (error.message === 'Failed to fetch') {
+      if (error.message?.includes('fetch') || error.message === 'Failed to fetch' || error.message?.includes('network')) {
         setNetworkError(true);
         setSignupError("Network error: Unable to connect to authentication service. Please check your internet connection and try again.");
       } else {
@@ -177,7 +176,7 @@ const Login = () => {
       await signInWithGoogle();
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      if (error.message === 'Failed to fetch') {
+      if (error.message === 'Failed to fetch' || error.message?.includes('network')) {
         setNetworkError(true);
       }
       toast({

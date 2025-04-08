@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/layout/PageHeader';
@@ -30,7 +29,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Bell, Mail, Calendar as CalendarIcon, User, Shield, UserPlus } from 'lucide-react';
-import { ADMIN_EMAIL } from '@/lib/supabase';
+import { ADMIN_EMAIL } from '@/integrations/supabase/client';
 
 const Settings = () => {
   const { toast } = useToast();
