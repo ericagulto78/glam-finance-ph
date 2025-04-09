@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Calendar, FileText, DownloadCloud, Eye, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, type Invoice, type InvoiceStatus, castInvoiceData } from '@/integrations/supabase/client';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,16 +42,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-
-interface Invoice {
-  id: string;
-  invoice_number: string;
-  client: string;
-  issue_date: string;
-  due_date: string;
-  amount: number;
-  status: 'paid' | 'pending' | 'overdue';
-}
 
 const statusColors = {
   paid: "bg-green-100 text-green-800",
@@ -107,7 +97,9 @@ const Invoices = () => {
 
       if (error) throw error;
       
-      setInvoices(data || []);
+      // Cast the data to ensure it matches our Invoice type
+      const typedInvoices = data?.map(invoice => castInvoiceData(invoice)) || [];
+      setInvoices(typedInvoices);
     } catch (error: any) {
       console.error('Error fetching invoices:', error);
       toast({
@@ -142,14 +134,19 @@ const Invoices = () => {
 
     setIsLoading(true);
     try {
+      const invoiceToInsert = {
+        invoice_number: newInvoice.invoice_number || '',
+        client: newInvoice.client || '',
+        issue_date: newInvoice.issue_date || '',
+        due_date: newInvoice.due_date || '',
+        amount: newInvoice.amount || 0,
+        status: newInvoice.status || 'pending',
+        user_id: user.id
+      };
+      
       const { data, error } = await supabase
         .from('invoices')
-        .insert([
-          {
-            ...newInvoice,
-            user_id: user.id,
-          }
-        ])
+        .insert([invoiceToInsert])
         .select();
 
       if (error) throw error;

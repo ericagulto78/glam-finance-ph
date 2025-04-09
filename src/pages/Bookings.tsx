@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Calendar, User, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, type Booking, type BookingStatus, castBookingData } from '@/integrations/supabase/client';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -43,17 +43,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-
-interface Booking {
-  id: string;
-  client: string;
-  service: string;
-  date: string;
-  time: string;
-  location: string;
-  amount: number;
-  status: 'upcoming' | 'completed' | 'cancelled';
-}
 
 const statusColors = {
   upcoming: "bg-blue-100 text-blue-800",
@@ -97,7 +86,9 @@ const Bookings = () => {
 
       if (error) throw error;
       
-      setBookings(data || []);
+      // Cast the data to ensure it matches our Booking type
+      const typedBookings = data?.map(booking => castBookingData(booking)) || [];
+      setBookings(typedBookings);
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       toast({
@@ -141,14 +132,20 @@ const Bookings = () => {
 
     setIsLoading(true);
     try {
+      const bookingToInsert = {
+        client: newBooking.client || '',
+        service: newBooking.service || '',
+        date: newBooking.date || '',
+        time: newBooking.time || '',
+        location: newBooking.location || '',
+        amount: newBooking.amount || 0,
+        status: newBooking.status || 'upcoming',
+        user_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('bookings')
-        .insert([
-          {
-            ...newBooking,
-            user_id: user.id,
-          }
-        ])
+        .insert([bookingToInsert])
         .select();
 
       if (error) throw error;

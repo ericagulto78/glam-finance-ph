@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, ArrowDownUp, Calendar, Tag, Receipt } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, type Expense } from '@/integrations/supabase/client';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -43,15 +43,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Edit, Trash2, MoreHorizontal } from 'lucide-react';
-
-interface Expense {
-  id: string;
-  date: string;
-  description: string;
-  category: string;
-  amount: number;
-  tax_deductible: boolean;
-}
 
 const categoryColors: Record<string, string> = {
   'Supplies': 'bg-blue-100 text-blue-800',
@@ -138,14 +129,18 @@ const Expenses = () => {
 
     setIsLoading(true);
     try {
+      const expenseToInsert = {
+        date: newExpense.date || '',
+        description: newExpense.description || '',
+        category: newExpense.category || '',
+        amount: newExpense.amount || 0,
+        tax_deductible: newExpense.tax_deductible ?? true,
+        user_id: user.id
+      };
+      
       const { data, error } = await supabase
         .from('expenses')
-        .insert([
-          {
-            ...newExpense,
-            user_id: user.id,
-          }
-        ])
+        .insert([expenseToInsert])
         .select();
 
       if (error) throw error;

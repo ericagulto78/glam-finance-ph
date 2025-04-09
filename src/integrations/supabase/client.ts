@@ -24,3 +24,71 @@ export const ADMIN_EMAIL = 'ericagulto@gmail.com';
 export const isAdmin = (email: string | undefined) => {
   return email === ADMIN_EMAIL;
 };
+
+// Type definitions and helpers for our components
+export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
+export type InvoiceStatus = 'paid' | 'pending' | 'overdue';
+
+// Type guards to ensure status values are correctly typed
+export const isValidBookingStatus = (status: string): status is BookingStatus => {
+  return ['upcoming', 'completed', 'cancelled'].includes(status);
+};
+
+export const isValidInvoiceStatus = (status: string): status is InvoiceStatus => {
+  return ['paid', 'pending', 'overdue'].includes(status);
+};
+
+// Helper functions to cast Supabase data to our frontend types
+export const castBookingData = (data: any): Booking => {
+  return {
+    ...data,
+    status: isValidBookingStatus(data.status) ? data.status : 'upcoming'
+  };
+};
+
+export const castInvoiceData = (data: any): Invoice => {
+  return {
+    ...data,
+    status: isValidInvoiceStatus(data.status) ? data.status : 'pending'
+  };
+};
+
+// Type definitions that match our Supabase schema
+export interface Booking {
+  id: string;
+  client: string;
+  service: string;
+  date: string;
+  time: string;
+  location: string;
+  amount: number;
+  status: BookingStatus;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Expense {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  amount: number;
+  tax_deductible: boolean;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  client: string;
+  issue_date: string;
+  due_date: string;
+  amount: number;
+  status: InvoiceStatus;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
