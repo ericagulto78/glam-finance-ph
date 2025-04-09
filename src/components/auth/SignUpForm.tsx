@@ -44,10 +44,17 @@ const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps)
 
     setIsLoading(true);
     try {
-      // Sign up the user
+      // Get the current URL to use for redirects
+      const currentUrl = window.location.origin;
+      console.log("Current URL for redirects:", currentUrl);
+      
+      // Sign up the user with proper redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${currentUrl}/login`
+        }
       });
 
       if (authError) throw authError;
