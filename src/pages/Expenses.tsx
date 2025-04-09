@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, ArrowDownUp, Calendar, Tag, Receipt } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
