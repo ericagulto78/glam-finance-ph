@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Calendar, User, DollarSign, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,7 +35,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
 import {
@@ -54,59 +56,6 @@ interface Booking {
   status: 'upcoming' | 'completed' | 'cancelled';
 }
 
-const BOOKINGS_DATA: Booking[] = [
-  {
-    id: '1',
-    client: 'Maria Santos',
-    service: 'Bridal Makeup',
-    date: '2025-04-15',
-    time: '09:00 AM',
-    location: 'Client\'s Home',
-    amount: 5000,
-    status: 'upcoming',
-  },
-  {
-    id: '2',
-    client: 'Sofia Garcia',
-    service: 'Photoshoot Makeup',
-    date: '2025-04-12',
-    time: '01:30 PM',
-    location: 'Studio',
-    amount: 3500,
-    status: 'upcoming',
-  },
-  {
-    id: '3',
-    client: 'Olivia Cruz',
-    service: 'Special Event Makeup',
-    date: '2025-04-08',
-    time: '10:00 AM',
-    location: 'Hotel Venue',
-    amount: 4200,
-    status: 'completed',
-  },
-  {
-    id: '4',
-    client: 'Isabella Reyes',
-    service: 'Party Makeup',
-    date: '2025-04-05',
-    time: '07:00 PM',
-    location: 'Client\'s Home',
-    amount: 2800,
-    status: 'completed',
-  },
-  {
-    id: '5',
-    client: 'Emma Fernandez',
-    service: 'Bridal Trial',
-    date: '2025-04-03',
-    time: '02:00 PM',
-    location: 'Studio',
-    amount: 2500,
-    status: 'cancelled',
-  },
-];
-
 const statusColors = {
   upcoming: "bg-blue-100 text-blue-800",
   completed: "bg-green-100 text-green-800",
@@ -114,18 +63,113 @@ const statusColors = {
 };
 
 const Bookings = () => {
-  const [bookings, setBookings] = useState<Booking[]>(BOOKINGS_DATA);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // New booking form state
+  const [newBooking, setNewBooking] = useState<Partial<Booking>>({
+    client: '',
+    service: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '09:00 AM',
+    location: '',
+    amount: 0,
+    status: 'upcoming',
+  });
+
+  // Fetch bookings from Supabase
+  const fetchBookings = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      
+      setBookings(data || []);
+    } catch (error: any) {
+      console.error('Error fetching bookings:', error);
+      toast({
+        title: "Error fetching bookings",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, [user]);
 
   const handleAddBooking = () => {
-    toast({
-      title: "Add booking feature",
-      description: "This feature will be implemented in a future update.",
+    setNewBooking({
+      client: '',
+      service: '',
+      date: new Date().toISOString().split('T')[0],
+      time: '09:00 AM',
+      location: '',
+      amount: 0,
+      status: 'upcoming',
     });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleSubmitNewBooking = async () => {
+    if (!user) return;
+    
+    if (!newBooking.client || !newBooking.service || !newBooking.date || !newBooking.time || !newBooking.location) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            ...newBooking,
+            user_id: user.id,
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      
+      setIsAddDialogOpen(false);
+      fetchBookings();
+      toast({
+        title: "Booking added",
+        description: "The booking has been successfully added",
+      });
+    } catch (error: any) {
+      console.error('Error adding booking:', error);
+      toast({
+        title: "Error adding booking",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEditBooking = (booking: Booking) => {
@@ -133,27 +177,108 @@ const Bookings = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleUpdateBooking = async () => {
+    if (!selectedBooking || !user) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          client: selectedBooking.client,
+          service: selectedBooking.service,
+          date: selectedBooking.date,
+          time: selectedBooking.time,
+          location: selectedBooking.location,
+          amount: selectedBooking.amount,
+          status: selectedBooking.status,
+        })
+        .eq('id', selectedBooking.id);
+
+      if (error) throw error;
+      
+      setIsEditDialogOpen(false);
+      fetchBookings();
+      toast({
+        title: "Booking updated",
+        description: "The booking has been successfully updated",
+      });
+    } catch (error: any) {
+      console.error('Error updating booking:', error);
+      toast({
+        title: "Error updating booking",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (selectedBooking) {
-      const updatedBookings = bookings.filter(booking => booking.id !== selectedBooking.id);
-      setBookings(updatedBookings);
+  const confirmDelete = async () => {
+    if (!selectedBooking || !user) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', selectedBooking.id);
+
+      if (error) throw error;
+      
       setIsDeleteDialogOpen(false);
+      fetchBookings();
       toast({
         title: "Booking deleted",
         description: `Booking for ${selectedBooking.client} has been deleted.`,
       });
+    } catch (error: any) {
+      console.error('Error deleting booking:', error);
+      toast({
+        title: "Error deleting booking",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const filteredBookings = bookings.filter(booking => 
-    booking.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    booking.service.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Handle form input changes for new booking
+  const handleNewBookingChange = (field: string, value: any) => {
+    setNewBooking((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handle form input changes for edit booking
+  const handleSelectedBookingChange = (field: string, value: any) => {
+    if (!selectedBooking) return;
+    
+    setSelectedBooking((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  };
+
+  const filteredBookings = bookings.filter(booking => {
+    const matchesSearch = booking.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         booking.service.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="h-full">
@@ -181,7 +306,11 @@ const Bookings = () => {
                 />
               </div>
               <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                <Select defaultValue="all">
+                <Select 
+                  defaultValue="all"
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                >
                   <SelectTrigger className="w-full md:w-[140px]">
                     <Filter size={16} className="mr-2" />
                     <SelectValue placeholder="Status" />
@@ -217,7 +346,13 @@ const Bookings = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBookings.length > 0 ? (
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        Loading bookings...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredBookings.length > 0 ? (
                     filteredBookings.map((booking) => (
                       <TableRow key={booking.id} className="hover:bg-muted/50">
                         <TableCell>
@@ -289,6 +424,104 @@ const Bookings = () => {
         </Card>
       </div>
 
+      {/* Add Booking Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Add New Booking</DialogTitle>
+            <DialogDescription>
+              Enter the details for the new booking.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-client">Client Name</Label>
+                <Input 
+                  id="new-client" 
+                  value={newBooking.client}
+                  onChange={(e) => handleNewBookingChange('client', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-service">Service</Label>
+                <Input 
+                  id="new-service" 
+                  value={newBooking.service}
+                  onChange={(e) => handleNewBookingChange('service', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-date">Date</Label>
+                <Input 
+                  id="new-date" 
+                  type="date" 
+                  value={newBooking.date}
+                  onChange={(e) => handleNewBookingChange('date', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-time">Time</Label>
+                <Input 
+                  id="new-time" 
+                  value={newBooking.time}
+                  onChange={(e) => handleNewBookingChange('time', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-location">Location</Label>
+              <Input 
+                id="new-location" 
+                value={newBooking.location}
+                onChange={(e) => handleNewBookingChange('location', e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-amount">Amount (₱)</Label>
+                <Input 
+                  id="new-amount" 
+                  type="number" 
+                  value={newBooking.amount?.toString()}
+                  onChange={(e) => handleNewBookingChange('amount', parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-status">Status</Label>
+                <Select 
+                  value={newBooking.status} 
+                  onValueChange={(value) => handleNewBookingChange('status', value)}
+                >
+                  <SelectTrigger id="new-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={handleSubmitNewBooking}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Adding...' : 'Add Booking'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -302,14 +535,18 @@ const Bookings = () => {
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Booking Dialog - Placeholder for now */}
+      {/* Edit Booking Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
@@ -318,80 +555,92 @@ const Bookings = () => {
               Update the booking details below.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="client">Client Name</Label>
-                <Input 
-                  id="client" 
-                  defaultValue={selectedBooking?.client} 
-                />
+          {selectedBooking && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client">Client Name</Label>
+                  <Input 
+                    id="client" 
+                    value={selectedBooking.client}
+                    onChange={(e) => handleSelectedBookingChange('client', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="service">Service</Label>
+                  <Input 
+                    id="service" 
+                    value={selectedBooking.service}
+                    onChange={(e) => handleSelectedBookingChange('service', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input 
+                    id="date" 
+                    type="date" 
+                    value={selectedBooking.date}
+                    onChange={(e) => handleSelectedBookingChange('date', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="time">Time</Label>
+                  <Input 
+                    id="time" 
+                    value={selectedBooking.time}
+                    onChange={(e) => handleSelectedBookingChange('time', e.target.value)}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="service">Service</Label>
+                <Label htmlFor="location">Location</Label>
                 <Input 
-                  id="service" 
-                  defaultValue={selectedBooking?.service} 
+                  id="location" 
+                  value={selectedBooking.location}
+                  onChange={(e) => handleSelectedBookingChange('location', e.target.value)}
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount (₱)</Label>
+                  <Input 
+                    id="amount" 
+                    type="number" 
+                    value={selectedBooking.amount.toString()}
+                    onChange={(e) => handleSelectedBookingChange('amount', parseInt(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select 
+                    value={selectedBooking.status}
+                    onValueChange={(value) => handleSelectedBookingChange('status', value as any)}
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input 
-                  id="date" 
-                  type="date" 
-                  defaultValue={selectedBooking?.date} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
-                <Input 
-                  id="time" 
-                  defaultValue={selectedBooking?.time} 
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input 
-                id="location" 
-                defaultValue={selectedBooking?.location} 
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (₱)</Label>
-                <Input 
-                  id="amount" 
-                  type="number" 
-                  defaultValue={selectedBooking?.amount.toString()} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={selectedBooking?.status}>
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button type="submit" onClick={() => {
-              setIsEditDialogOpen(false);
-              toast({
-                title: "Booking updated",
-                description: "The booking has been successfully updated.",
-              });
-            }}>
-              Save changes
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={handleUpdateBooking}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
