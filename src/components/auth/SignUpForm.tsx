@@ -44,16 +44,20 @@ const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps)
 
     setIsLoading(true);
     try {
-      // Get the current URL to use for redirects
+      // Get the deployed URL or fallback to current origin
       const currentUrl = window.location.origin;
-      console.log("Current URL for redirects:", currentUrl);
+      const productionUrl = currentUrl.includes('localhost') ? 'https://your-production-domain.com' : currentUrl;
+      console.log("Using redirect URL:", productionUrl);
+      
+      // Clean up the email by trimming whitespace
+      const trimmedEmail = email.trim();
       
       // Sign up the user with proper redirect
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: trimmedEmail,
         password,
         options: {
-          emailRedirectTo: `${currentUrl}/login`
+          emailRedirectTo: `${productionUrl}/login`
         }
       });
 
@@ -62,14 +66,14 @@ const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps)
       if (authData?.user) {
         // Create user profile with pending status
         // Only admins are automatically approved
-        const isAdminUser = email === ADMIN_EMAIL;
+        const isAdminUser = trimmedEmail === ADMIN_EMAIL;
         
         const { error: profileError } = await supabase
           .from('user_profiles')
           .insert([
             { 
               user_id: authData.user.id,
-              email: email,
+              email: trimmedEmail,
               status: isAdminUser ? 'approved' : 'pending'
             }
           ]);
@@ -80,7 +84,7 @@ const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps)
           title: isAdminUser ? "Admin account created" : "Account pending approval",
           description: isAdminUser 
             ? "Admin account created successfully."
-            : "Your account has been created and is pending administrator approval.",
+            : "Your account has been created and is pending administrator approval. Please check your email to confirm your address.",
         });
       }
     } catch (error: any) {
