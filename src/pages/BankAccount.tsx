@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import PageHeader from '@/components/layout/PageHeader';
-import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,65 +12,26 @@ import {
   CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Plus, PenSquare, Trash2, CreditCard, DollarSign, Wallet } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-
-interface BankAccount {
-  id: string;
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-  isDefault: boolean;
-  balance: number;
-  undeposited: number;
-}
-
-// Initial sample data
-const BANK_ACCOUNTS_DATA: BankAccount[] = [
-  {
-    id: '1',
-    bankName: 'BDO',
-    accountName: 'Camille Ramos',
-    accountNumber: '1234567890',
-    isDefault: true,
-    balance: 25000,
-    undeposited: 3000
-  },
-  {
-    id: '2',
-    bankName: 'BPI',
-    accountName: 'Camille Ramos',
-    accountNumber: '0987654321',
-    isDefault: false,
-    balance: 12500,
-    undeposited: 0
-  }
-];
+import { useBankAccounts, BankAccountFormData } from '@/hooks/useBankAccounts';
 
 const BankAccount = () => {
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(BANK_ACCOUNTS_DATA);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [currentAccount, setCurrentAccount] = useState<BankAccount | null>(null);
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [totalStats, setTotalStats] = useState({
-    totalBalance: 0,
-    totalUndeposited: 0,
-    totalCashOnHand: 0
-  });
+  const {
+    bankAccounts,
+    isLoading,
+    isEditing,
+    currentAccount,
+    totalStats,
+    setIsEditing,
+    setCurrentAccount,
+    addBankAccount,
+    updateBankAccount,
+    deleteBankAccount,
+    setAccountDefault
+  } = useBankAccounts();
 
-  const form = useForm({
+  const form = useForm<BankAccountFormData>({
     defaultValues: {
       bankName: '',
       accountName: '',
@@ -81,19 +41,6 @@ const BankAccount = () => {
       undeposited: 0
     }
   });
-
-  useEffect(() => {
-    // Calculate total stats
-    const totalBalance = bankAccounts.reduce((sum, account) => sum + account.balance, 0);
-    const totalUndeposited = bankAccounts.reduce((sum, account) => sum + account.undeposited, 0);
-    const totalCashOnHand = totalBalance + totalUndeposited;
-    
-    setTotalStats({
-      totalBalance,
-      totalUndeposited,
-      totalCashOnHand
-    });
-  }, [bankAccounts]);
 
   const handleAddAccount = () => {
     setIsEditing(true);
@@ -108,7 +55,7 @@ const BankAccount = () => {
     });
   };
 
-  const handleEditAccount = (account: BankAccount) => {
+  const handleEditAccount = (account: any) => {
     setIsEditing(true);
     setCurrentAccount(account);
     form.reset({
@@ -122,60 +69,16 @@ const BankAccount = () => {
   };
 
   const handleDeleteAccount = (id: string) => {
-    setBankAccounts(prev => prev.filter(account => account.id !== id));
-    toast({
-      title: "Account deleted",
-      description: "Bank account has been removed successfully.",
-    });
+    deleteBankAccount(id);
   };
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: BankAccountFormData) => {
     if (currentAccount) {
       // Editing existing account
-      const updatedAccounts = bankAccounts.map(account => {
-        if (account.id === currentAccount.id) {
-          return {
-            ...account,
-            ...data
-          };
-        }
-        
-        // If the current account is set as default, make others not default
-        if (data.isDefault && account.id !== currentAccount.id) {
-          return {
-            ...account,
-            isDefault: false
-          };
-        }
-        
-        return account;
-      });
-      
-      setBankAccounts(updatedAccounts);
-      toast({
-        title: "Account updated",
-        description: "Bank account details have been updated successfully.",
-      });
+      updateBankAccount(currentAccount.id, data);
     } else {
       // Adding new account
-      const newAccount: BankAccount = {
-        id: Math.random().toString(36).substring(2, 9),
-        ...data
-      };
-      
-      // If the new account is set as default, make others not default
-      if (data.isDefault) {
-        setBankAccounts(prev => prev.map(account => ({
-          ...account,
-          isDefault: false
-        })));
-      }
-      
-      setBankAccounts(prev => [...prev, newAccount]);
-      toast({
-        title: "Account added",
-        description: "New bank account has been added successfully.",
-      });
+      addBankAccount(data);
     }
     
     setIsEditing(false);
@@ -190,15 +93,7 @@ const BankAccount = () => {
   };
 
   const handleSetDefault = (id: string) => {
-    setBankAccounts(prev => prev.map(account => ({
-      ...account,
-      isDefault: account.id === id
-    })));
-    
-    toast({
-      title: "Default account updated",
-      description: "Your default bank account has been updated.",
-    });
+    setAccountDefault(id);
   };
 
   return (
@@ -342,7 +237,7 @@ const BankAccount = () => {
                   <Button type="button" variant="outline" onClick={handleCancel}>
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={isLoading}>
                     {currentAccount ? 'Update Account' : 'Add Account'}
                   </Button>
                 </div>

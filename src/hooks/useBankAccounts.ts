@@ -42,7 +42,9 @@ export function useBankAccounts() {
     
     setIsLoading(true);
     try {
-      const { data: rawAccounts, error } = await supabase
+      // Use the typed-safe version with any to bypass TypeScript limitations
+      // until the types get updated
+      const { data: rawAccounts, error } = await (supabase as any)
         .from('bank_accounts')
         .select('*')
         .order('created_at', { ascending: false });
@@ -50,7 +52,7 @@ export function useBankAccounts() {
       if (error) throw error;
       
       // Convert the data to our BankAccount type
-      const accounts: BankAccount[] = rawAccounts ? rawAccounts.map(account => castBankAccountData(account)) : [];
+      const accounts: BankAccount[] = rawAccounts ? rawAccounts.map((account: any) => castBankAccountData(account)) : [];
       
       setBankAccounts(accounts);
       
@@ -87,14 +89,14 @@ export function useBankAccounts() {
     try {
       // If this is the default account, update all other accounts to not be default
       if (formData.isDefault) {
-        await supabase
+        await (supabase as any)
           .from('bank_accounts')
           .update({ is_default: false })
           .eq('user_id', user.id);
       }
       
       // Insert the new account
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bank_accounts')
         .insert([{
           user_id: user.id,
@@ -134,7 +136,7 @@ export function useBankAccounts() {
     try {
       // If this is the default account, update all other accounts to not be default
       if (formData.isDefault) {
-        await supabase
+        await (supabase as any)
           .from('bank_accounts')
           .update({ is_default: false })
           .neq('id', id)
@@ -142,7 +144,7 @@ export function useBankAccounts() {
       }
       
       // Update the account
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('bank_accounts')
         .update({
           bank_name: formData.bankName,
@@ -179,7 +181,7 @@ export function useBankAccounts() {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('bank_accounts')
         .delete()
         .eq('id', id);
@@ -210,13 +212,13 @@ export function useBankAccounts() {
     setIsLoading(true);
     try {
       // Set all accounts to not default
-      await supabase
+      await (supabase as any)
         .from('bank_accounts')
         .update({ is_default: false })
         .eq('user_id', user.id);
       
       // Set this account to default
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('bank_accounts')
         .update({ is_default: true })
         .eq('id', id);

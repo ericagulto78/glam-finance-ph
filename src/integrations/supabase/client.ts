@@ -68,13 +68,16 @@ export const castExpenseData = (data: any): Expense => {
 
 export const castBankAccountData = (data: any): BankAccount => {
   return {
-    ...data,
+    id: data.id,
     bankName: data.bank_name || '',
     accountName: data.account_name || '',
     accountNumber: data.account_number || '',
     isDefault: data.is_default || false,
     balance: data.balance || 0,
-    undeposited: data.undeposited || 0
+    undeposited: data.undeposited || 0,
+    user_id: data.user_id,
+    created_at: data.created_at,
+    updated_at: data.updated_at
   };
 };
 
