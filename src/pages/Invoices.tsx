@@ -1,121 +1,377 @@
-
-import React from 'react';
-import { Plus, CreditCard } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/layout/PageHeader';
-import InvoiceTable from '@/components/invoices/InvoiceTable';
-import InvoiceFilter from '@/components/invoices/InvoiceFilter';
-import InvoiceDialogs from '@/components/invoices/InvoiceDialogs';
-import { useInvoices } from '@/hooks/useInvoices';
+import { Button } from '@/components/ui/button';
+import InvoiceTable from '@/components/invoice/InvoiceTable';
+import InvoiceFilter from '@/components/invoice/InvoiceFilter';
+import InvoiceDialog from '@/components/invoice/InvoiceDialog';
+import InvoiceView from '@/components/invoice/InvoiceView';
+import InvoicePaymentDialog from '@/components/invoice/InvoicePaymentDialog';
+import { 
+  Invoice, 
+  InvoiceStatus, 
+  BankAccount,
+  Booking,
+  supabase 
+} from '@/integrations/supabase/client';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog"
 
 const Invoices = () => {
-  const {
-    invoices,
-    searchTerm,
-    statusFilter,
-    newInvoice,
-    selectedInvoice,
-    isAddDialogOpen,
-    isEditDialogOpen,
-    isDeleteDialogOpen,
-    isViewDialogOpen,
-    isProcessPaymentDialogOpen,
-    isLoading,
-    setSearchTerm,
-    setStatusFilter,
-    setSelectedInvoice,
-    setIsAddDialogOpen,
-    setIsEditDialogOpen,
-    setIsDeleteDialogOpen,
-    setIsViewDialogOpen,
-    setIsProcessPaymentDialogOpen,
-    handleNewInvoiceChange,
-    handleSelectedInvoiceChange,
-    addInvoice,
-    updateInvoice,
-    deleteInvoice,
-    processInvoicePayment
-  } = useInvoices();
+  const { toast } = useToast();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleAddInvoice = () => {
-    setIsAddDialogOpen(true);
+  useEffect(() => {
+    fetchInvoices();
+    fetchBookings();
+    fetchBankAccounts();
+  }, []);
+
+  const fetchInvoices = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInvoices(data as Invoice[]);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching invoices",
+        description: error.message || "An error occurred while fetching invoices",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleViewInvoice = (invoice: any) => {
-    setSelectedInvoice(invoice);
-    setIsViewDialogOpen(true);
+  const fetchBookings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBookings(data as Booking[]);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching bookings",
+        description: error.message || "An error occurred while fetching bookings",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditInvoice = (invoice: any) => {
-    setSelectedInvoice(invoice);
-    setIsEditDialogOpen(true);
+  const fetchBankAccounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('bank_accounts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBankAccounts(data as BankAccount[]);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching bank accounts",
+        description: error.message || "An error occurred while fetching bank accounts",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteInvoice = (invoice: any) => {
-    setSelectedInvoice(invoice);
+  const handleCreateInvoice = async (invoiceData: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert([invoiceData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setInvoices(prevInvoices => [data as Invoice, ...prevInvoices]);
+      setIsCreateModalOpen(false);
+      toast({
+        title: "Invoice created",
+        description: `Invoice #${data.invoice_number} has been successfully created.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error creating invoice",
+        description: error.message || "An error occurred while creating the invoice",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateInvoice = async (invoiceData: Invoice) => {
+    if (!invoiceData.id) {
+      toast({
+        title: "Error updating invoice",
+        description: "Invoice ID is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .update(invoiceData)
+        .eq('id', invoiceData.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setInvoices(prevInvoices =>
+        prevInvoices.map(invoice => (invoice.id === invoiceData.id ? data as Invoice : invoice))
+      );
+      setIsEditModalOpen(false);
+      toast({
+        title: "Invoice updated",
+        description: `Invoice #${data.invoice_number} has been successfully updated.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating invoice",
+        description: error.message || "An error occurred while updating the invoice",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteInvoice = (invoice: Invoice) => {
+    setCurrentInvoice(invoice);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleProcessPayment = (invoice: any) => {
-    setSelectedInvoice(invoice);
-    setIsProcessPaymentDialogOpen(true);
+  const handleConfirmDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setInvoices(prevInvoices => prevInvoices.filter(invoice => invoice.id !== id));
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: "Invoice deleted",
+        description: "The invoice has been successfully deleted.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting invoice",
+        description: error.message || "An error occurred while deleting the invoice",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleProcessPayment = async (invoiceId: string, paymentMethod: string, bankAccountId?: string) => {
+    try {
+      // Optimistically update the invoice status to 'paid'
+      setInvoices(prevInvoices =>
+        prevInvoices.map(invoice =>
+          invoice.id === invoiceId ? { ...invoice, status: 'paid', payment_method: paymentMethod, bank_account_id: bankAccountId } : invoice
+        )
+      );
+
+      // Update the invoice in the database
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'paid', payment_method: paymentMethod, bank_account_id: bankAccountId })
+        .eq('id', invoiceId);
+
+      if (error) {
+        // If there's an error, revert the optimistic update
+        setInvoices(prevInvoices =>
+          prevInvoices.map(invoice =>
+            invoice.id === invoiceId ? { ...invoice, status: 'pending', payment_method: 'unpaid', bank_account_id: null } : invoice
+          )
+        );
+        throw error;
+      }
+
+      setIsPaymentModalOpen(false);
+      toast({
+        title: "Payment processed",
+        description: "The payment has been successfully processed and the invoice status updated.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error processing payment",
+        description: error.message || "An error occurred while processing the payment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNewInvoice = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setCurrentInvoice(invoice);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setCurrentInvoice(invoice);
+    setIsEditModalOpen(true);
+  };
+
+  const handleStatusFilter = (status: InvoiceStatus | 'all') => {
+    setStatusFilter(status);
+  };
+
+  const handleDateRangeFilter = (range: [Date | null, Date | null]) => {
+    setDateRange(range);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const filteredInvoices = invoices.filter(invoice => {
+    const statusMatch = statusFilter === 'all' || invoice.status === statusFilter;
+    
+    const dateMatch = 
+      !dateRange[0] || !dateRange[1] ||
+      (new Date(invoice.issue_date) >= dateRange[0] && new Date(invoice.issue_date) <= dateRange[1]);
+
+    const searchMatch =
+      invoice.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.client.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return statusMatch && dateMatch && searchMatch;
+  });
 
   return (
     <div className="h-full">
       <PageHeader 
         title="Invoices" 
-        subtitle="Track and manage your client invoices"
-        action={{
-          label: "Add Invoice",
-          onClick: handleAddInvoice,
-          icon: <Plus size={16} />,
-        }}
+        subtitle="Manage client invoices and payments"
+        actionButton={
+          <Button onClick={handleNewInvoice}>
+            <Plus className="mr-2 h-4 w-4" /> New Invoice
+          </Button>
+        }
       />
-
-      <div className="p-6">
+      
+      <div className="px-6 py-4">
         <InvoiceFilter 
-          searchTerm={searchTerm}
-          statusFilter={statusFilter}
-          onSearchChange={setSearchTerm}
-          onStatusFilterChange={setStatusFilter}
+          onStatusChange={handleStatusFilter} 
+          onDateRangeChange={handleDateRangeFilter}
+          onSearch={handleSearch}
         />
-
-        <Card>
-          <CardContent className="p-0">
-            <InvoiceTable 
-              invoices={invoices}
-              isLoading={isLoading}
-              onViewInvoice={handleViewInvoice}
-              onEditInvoice={handleEditInvoice}
-              onDeleteInvoice={handleDeleteInvoice}
-              onProcessPayment={handleProcessPayment}
-            />
-          </CardContent>
-        </Card>
+        
+        <InvoiceTable 
+          invoices={filteredInvoices} 
+          isLoading={isLoading}
+          onViewInvoice={handleViewInvoice}
+          onEditInvoice={handleEditInvoice}
+          onDeleteInvoice={handleDeleteInvoice}
+        />
       </div>
+      
+      {isCreateModalOpen && (
+        <InvoiceDialog
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSubmit={handleCreateInvoice}
+          bookings={bookings}
+          title="Create New Invoice"
+          buttonText="Create Invoice"
+        />
+      )}
+      
+      {currentInvoice && isEditModalOpen && (
+        <InvoiceDialog
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSubmit={handleUpdateInvoice}
+          bookings={bookings}
+          initialData={currentInvoice}
+          title="Edit Invoice"
+          buttonText="Save Changes"
+        />
+      )}
+      
+      {currentInvoice && isViewModalOpen && (
+        <Dialog
+          open={isViewModalOpen}
+          onOpenChange={(open) => {
+            if (!open) setIsViewModalOpen(false);
+          }}
+        >
+          <DialogContent className="max-w-3xl">
+            <InvoiceView invoice={currentInvoice} />
+          </DialogContent>
+        </Dialog>
+      )}
 
-      <InvoiceDialogs 
-        isAddDialogOpen={isAddDialogOpen}
-        isEditDialogOpen={isEditDialogOpen}
-        isDeleteDialogOpen={isDeleteDialogOpen}
-        isViewDialogOpen={isViewDialogOpen}
-        isProcessPaymentDialogOpen={isProcessPaymentDialogOpen}
-        isLoading={isLoading}
-        newInvoice={newInvoice}
-        selectedInvoice={selectedInvoice}
-        onAddDialogOpenChange={setIsAddDialogOpen}
-        onEditDialogOpenChange={setIsEditDialogOpen}
-        onDeleteDialogOpenChange={setIsDeleteDialogOpen}
-        onViewDialogOpenChange={setIsViewDialogOpen}
-        onProcessPaymentDialogOpenChange={setIsProcessPaymentDialogOpen}
-        onNewInvoiceChange={handleNewInvoiceChange}
-        onSelectedInvoiceChange={handleSelectedInvoiceChange}
-        onSubmitNewInvoice={addInvoice}
-        onUpdateInvoice={updateInvoice}
-        onConfirmDelete={deleteInvoice}
-        onProcessPayment={processInvoicePayment}
-      />
+      {currentInvoice && isPaymentModalOpen && (
+        <InvoicePaymentDialog
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onSubmit={handleProcessPayment}
+          invoice={currentInvoice}
+          bankAccounts={bankAccounts}
+        />
+      )}
+      
+      {isDeleteDialogOpen && currentInvoice && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete invoice 
+                #{currentInvoice.invoice_number} for {currentInvoice.client}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => handleConfirmDelete(currentInvoice.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };

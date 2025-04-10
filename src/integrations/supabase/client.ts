@@ -1,9 +1,18 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Admin configuration
+export const ADMIN_EMAIL = 'admin@example.com';
+
+export function isAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  return email === ADMIN_EMAIL;
+}
 
 // Invoice types
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue';
@@ -148,6 +157,41 @@ export function castTransactionData(data: any): Transaction {
     amount: data.amount || 0,
     fromAccount: data.fromAccount,
     toAccount: data.toAccount,
+    user_id: data.user_id,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
+}
+
+// Expense types
+export type ExpenseCategory = 'supplies' | 'rent' | 'utilities' | 'marketing' | 'travel' | 'equipment' | 'software' | 'services' | 'other';
+
+export function isValidExpenseCategory(category: string): category is ExpenseCategory {
+  return ['supplies', 'rent', 'utilities', 'marketing', 'travel', 'equipment', 'software', 'services', 'other'].includes(category);
+}
+
+export interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  category: ExpenseCategory;
+  tax_deductible: boolean;
+  is_monthly: boolean;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function castExpenseData(data: any): Expense {
+  return {
+    id: data.id,
+    description: data.description || '',
+    amount: data.amount || 0,
+    date: data.date,
+    category: isValidExpenseCategory(data.category) ? data.category : 'other',
+    tax_deductible: data.tax_deductible || false,
+    is_monthly: data.is_monthly || false,
     user_id: data.user_id,
     created_at: data.created_at,
     updated_at: data.updated_at
