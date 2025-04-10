@@ -311,7 +311,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrement_balance: {
+        Args: { row_id: string; amount_to_subtract: number }
+        Returns: number
+      }
+      increment_balance: {
+        Args: { row_id: string; amount_to_add: number }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
