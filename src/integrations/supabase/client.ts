@@ -39,7 +39,7 @@ export const isValidInvoiceStatus = (status: string): status is InvoiceStatus =>
   return ['paid', 'pending', 'overdue'].includes(status);
 };
 
-export const isValidTransactionType = (type: string): status is TransactionType => {
+export const isValidTransactionType = (type: string): type is TransactionType => {
   return ['deposit', 'withdrawal', 'transfer'].includes(type);
 };
 
