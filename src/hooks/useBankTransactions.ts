@@ -1,13 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  supabase, 
-  Transaction, 
-  TransactionType,
-  castTransactionData 
-} from '@/integrations/supabase/client';
+import { supabase, TransactionType } from '@/integrations/supabase/client';
 
 export interface TransactionFormData {
   id?: string;
@@ -20,41 +15,40 @@ export interface TransactionFormData {
 }
 
 export function useBankTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  
-  // Initial transaction form state
+
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+
   const initialTransactionState: TransactionFormData = {
-    date: new Date().toISOString().split('T')[0],
+    date: today,
     type: 'deposit',
     description: '',
     amount: 0,
     fromAccount: null,
-    toAccount: null,
+    toAccount: null
   };
-  
+
   const [newTransaction, setNewTransaction] = useState<TransactionFormData>(initialTransactionState);
 
-  // Fetch transactions
   const fetchTransactions = async () => {
     if (!user) return;
     
     setIsLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false });
 
       if (error) throw error;
       
-      // Cast the data to ensure it matches our Transaction type
-      const typedTransactions = data?.map(transaction => castTransactionData(transaction)) || [];
-      setTransactions(typedTransactions);
+      setTransactions(data || []);
     } catch (error: any) {
       console.error('Error fetching transactions:', error);
       toast({
@@ -67,153 +61,88 @@ export function useBankTransactions() {
     }
   };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [user]);
-
-  // Add a new transaction
   const addTransaction = async () => {
     if (!user) return;
     
-    if (!newTransaction.date || !newTransaction.description || newTransaction.amount <= 0) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields with valid values",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // For transfers, we need both accounts
-    if (newTransaction.type === 'transfer' && (!newTransaction.fromAccount || !newTransaction.toAccount)) {
-      toast({
-        title: "Missing account information",
-        description: "Please select both source and destination accounts for the transfer",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // For deposits, we need the destination account
-    if (newTransaction.type === 'deposit' && !newTransaction.toAccount) {
-      toast({
-        title: "Missing account information",
-        description: "Please select the destination account for the deposit",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // For withdrawals, we need the source account
-    if (newTransaction.type === 'withdrawal' && !newTransaction.fromAccount) {
-      toast({
-        title: "Missing account information",
-        description: "Please select the source account for the withdrawal",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
-      // 1. Create the transaction
-      const transactionToInsert = {
-        date: newTransaction.date,
-        type: newTransaction.type,
-        description: newTransaction.description,
-        amount: newTransaction.amount,
-        fromAccount: newTransaction.fromAccount,
-        toAccount: newTransaction.toAccount,
-        user_id: user.id,
-      };
-
-      const { data, error } = await (supabase as any)
+      // Validate transaction data
+      if (newTransaction.type === 'deposit' && !newTransaction.toAccount) {
+        throw new Error('Please select a destination account');
+      }
+      
+      if (newTransaction.type === 'withdrawal' && !newTransaction.fromAccount) {
+        throw new Error('Please select a source account');
+      }
+      
+      if (newTransaction.type === 'transfer' && (!newTransaction.fromAccount || !newTransaction.toAccount)) {
+        throw new Error('Please select both source and destination accounts');
+      }
+      
+      if (newTransaction.amount <= 0) {
+        throw new Error('Amount must be greater than zero');
+      }
+      
+      // Insert transaction
+      const { error: transactionError } = await supabase
         .from('transactions')
-        .insert([transactionToInsert])
-        .select();
+        .insert([{
+          date: newTransaction.date,
+          type: newTransaction.type,
+          description: newTransaction.description,
+          amount: newTransaction.amount,
+          fromAccount: newTransaction.fromAccount,
+          toAccount: newTransaction.toAccount,
+          user_id: user.id
+        }]);
 
-      if (error) throw error;
+      if (transactionError) throw transactionError;
       
-      // 2. Update account balances based on transaction type
+      // Update account balances
       if (newTransaction.type === 'deposit' && newTransaction.toAccount) {
-        // Get the account
-        const { data: accountData } = await supabase
+        const { error: depositError } = await supabase
           .from('bank_accounts')
-          .select('*')
-          .eq('id', newTransaction.toAccount)
-          .single();
+          .update({ balance: supabase.sql`balance + ${newTransaction.amount}` })
+          .eq('id', newTransaction.toAccount);
           
-        if (accountData) {
-          // Increase the balance
-          await supabase
-            .from('bank_accounts')
-            .update({
-              balance: (accountData.balance || 0) + newTransaction.amount,
-            })
-            .eq('id', newTransaction.toAccount);
-        }
-      } 
-      else if (newTransaction.type === 'withdrawal' && newTransaction.fromAccount) {
-        // Get the account
-        const { data: accountData } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .eq('id', newTransaction.fromAccount)
-          .single();
-          
-        if (accountData) {
-          // Decrease the balance
-          await supabase
-            .from('bank_accounts')
-            .update({
-              balance: Math.max((accountData.balance || 0) - newTransaction.amount, 0),
-            })
-            .eq('id', newTransaction.fromAccount);
-        }
-      }
-      else if (newTransaction.type === 'transfer' && newTransaction.fromAccount && newTransaction.toAccount) {
-        // Get the accounts
-        const { data: fromAccountData } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .eq('id', newTransaction.fromAccount)
-          .single();
-          
-        const { data: toAccountData } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .eq('id', newTransaction.toAccount)
-          .single();
-          
-        if (fromAccountData && toAccountData) {
-          // Decrease from account
-          await supabase
-            .from('bank_accounts')
-            .update({
-              balance: Math.max((fromAccountData.balance || 0) - newTransaction.amount, 0),
-            })
-            .eq('id', newTransaction.fromAccount);
-            
-          // Increase to account
-          await supabase
-            .from('bank_accounts')
-            .update({
-              balance: (toAccountData.balance || 0) + newTransaction.amount,
-            })
-            .eq('id', newTransaction.toAccount);
-        }
+        if (depositError) throw depositError;
       }
       
-      setIsAddDialogOpen(false);
-      // Refresh transactions and accounts
-      await fetchTransactions();
-      setNewTransaction(initialTransactionState);
+      if (newTransaction.type === 'withdrawal' && newTransaction.fromAccount) {
+        const { error: withdrawalError } = await supabase
+          .from('bank_accounts')
+          .update({ balance: supabase.sql`balance - ${newTransaction.amount}` })
+          .eq('id', newTransaction.fromAccount);
+          
+        if (withdrawalError) throw withdrawalError;
+      }
+      
+      if (newTransaction.type === 'transfer' && newTransaction.fromAccount && newTransaction.toAccount) {
+        const { error: fromError } = await supabase
+          .from('bank_accounts')
+          .update({ balance: supabase.sql`balance - ${newTransaction.amount}` })
+          .eq('id', newTransaction.fromAccount);
+          
+        if (fromError) throw fromError;
+        
+        const { error: toError } = await supabase
+          .from('bank_accounts')
+          .update({ balance: supabase.sql`balance + ${newTransaction.amount}` })
+          .eq('id', newTransaction.toAccount);
+          
+        if (toError) throw toError;
+      }
+      
       toast({
-        title: "Transaction added",
-        description: "The transaction has been successfully processed",
+        title: "Transaction processed",
+        description: `Your ${newTransaction.type} transaction has been processed successfully.`,
       });
+      
+      setNewTransaction(initialTransactionState);
+      setIsAddDialogOpen(false);
+      await fetchTransactions();
     } catch (error: any) {
-      console.error('Error adding transaction:', error);
+      console.error('Error processing transaction:', error);
       toast({
         title: "Error processing transaction",
         description: error.message,
@@ -224,33 +153,18 @@ export function useBankTransactions() {
     }
   };
 
-  // Handle form input changes for new transaction
   const handleNewTransactionChange = (field: string, value: any) => {
-    setNewTransaction((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    
-    // Reset accounts when changing transaction type
-    if (field === 'type') {
-      setNewTransaction((prev) => ({
-        ...prev,
-        fromAccount: null,
-        toAccount: null,
-      }));
-    }
+    setNewTransaction(prev => ({ ...prev, [field]: value }));
   };
 
   return {
     transactions,
     newTransaction,
-    selectedTransaction,
-    isAddDialogOpen,
     isLoading,
-    setSelectedTransaction,
+    isAddDialogOpen,
     setIsAddDialogOpen,
-    handleNewTransactionChange,
+    fetchTransactions,
     addTransaction,
-    fetchTransactions
+    handleNewTransactionChange,
   };
 }

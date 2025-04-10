@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, Pencil, Trash2, ChevronDown, CheckCircle } from 'lucide-react';
+import { Building, Pencil, Trash2, CheckCircle, ArrowUpRight, ArrowDownLeft, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BankAccount } from '@/integrations/supabase/client';
 
@@ -9,17 +9,23 @@ interface BankAccountCardProps {
   onEdit: (account: BankAccount) => void;
   onDelete: (id: string) => void;
   onSetDefault: (id: string) => void;
+  onDeposit?: (id: string) => void;
+  onWithdraw?: (id: string) => void;
+  onTransfer?: (id: string) => void;
 }
 
 const BankAccountCard: React.FC<BankAccountCardProps> = ({
   account,
   onEdit,
   onDelete,
-  onSetDefault
+  onSetDefault,
+  onDeposit,
+  onWithdraw,
+  onTransfer
 }) => {
   return (
     <div 
-      className={`p-4 border rounded-lg relative ${account.isDefault ? 'border-rose' : 'border-border'}`}
+      className={`p-4 border rounded-lg relative ${account.isDefault ? 'border-rose-500' : 'border-border'}`}
     >
       {account.isDefault && (
         <div className="absolute top-2 right-2 text-rose-500 flex items-center gap-1">
@@ -57,30 +63,68 @@ const BankAccountCard: React.FC<BankAccountCardProps> = ({
         </div>
       </div>
       
-      <div className="flex justify-end gap-2 mt-4">
-        {!account.isDefault && (
+      <div className="flex flex-wrap gap-2 mt-4">
+        {onDeposit && (
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => onSetDefault(account.id)}
+            onClick={() => onDeposit(account.id)}
+            className="flex items-center"
           >
-            Set as Default
+            <ArrowDownLeft size={16} className="mr-1 text-green-500" />
+            Deposit
           </Button>
         )}
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => onEdit(account)}
-        >
-          <Pencil size={16} />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => onDelete(account.id)}
-        >
-          <Trash2 size={16} />
-        </Button>
+        
+        {onWithdraw && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onWithdraw(account.id)}
+            className="flex items-center"
+          >
+            <ArrowUpRight size={16} className="mr-1 text-red-500" />
+            Withdraw
+          </Button>
+        )}
+        
+        {onTransfer && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => onTransfer(account.id)}
+            className="flex items-center"
+          >
+            <ArrowRightLeft size={16} className="mr-1 text-blue-500" />
+            Transfer
+          </Button>
+        )}
+        
+        <div className="flex ml-auto gap-2">
+          {!account.isDefault && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onSetDefault(account.id)}
+            >
+              Set as Default
+            </Button>
+          )}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => onEdit(account)}
+          >
+            <Pencil size={16} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => onDelete(account.id)}
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
       </div>
     </div>
   );

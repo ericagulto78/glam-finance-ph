@@ -8,6 +8,7 @@ import Invoices from '@/pages/Invoices';
 import Bookings from '@/pages/Bookings';
 import Expenses from '@/pages/Expenses';
 import BankAccounts from '@/pages/BankAccounts';
+import BankAccount from '@/pages/BankAccount';
 import ServiceTypes from '@/pages/ServiceTypes';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
@@ -16,7 +17,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Login />} />
+      <Route path="/register" element={<Login register={true} />} />
       
       <Route path="/" element={
         <ProtectedRoute>
@@ -30,6 +31,7 @@ const AppRoutes: React.FC = () => {
         <Route path="bookings" element={<Bookings />} />
         <Route path="expenses" element={<Expenses />} />
         <Route path="bank-accounts" element={<BankAccounts />} />
+        <Route path="bank-account" element={<BankAccount />} />
         <Route path="service-types" element={<ServiceTypes />} />
       </Route>
       

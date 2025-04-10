@@ -1,81 +1,58 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
-import Logo from '@/components/Logo';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
-import SocialLogin from '@/components/auth/SocialLogin';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [networkError, setNetworkError] = useState(false);
+interface LoginProps {
+  register?: boolean;
+}
+
+const Login: React.FC<LoginProps> = ({ register = false }) => {
+  const [activeTab, setActiveTab] = React.useState<string>(register ? 'register' : 'login');
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { user, userStatus } = useAuth();
-
-  // Redirect if user is already logged in and approved
+  const location = useLocation();
+  
   useEffect(() => {
-    if (user && userStatus === 'approved') {
+    if (user) {
       navigate('/');
     }
-  }, [user, userStatus, navigate]);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    // Set tab based on URL
+    if (location.pathname === '/register') {
+      setActiveTab('register');
+    } else {
+      setActiveTab('login');
+    }
+  }, [location]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 to-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 flex flex-col items-center">
-          <div className="mb-4">
-            <Logo />
-          </div>
-          <CardTitle className="text-2xl font-bold text-center">Welcome to GlamFinance PH</CardTitle>
-          <CardDescription className="text-center">
-            Makeup artist business management
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {networkError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Network error: Unable to connect to the authentication service. Please check your internet connection and Supabase configuration.
-              </AlertDescription>
-            </Alert>
-          )}
-        
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <SignInForm 
-                email={email}
-                setEmail={setEmail}
-                password={password}
-                setPassword={setPassword}
-              />
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <SignUpForm 
-                email={email}
-                setEmail={setEmail}
-                password={password}
-                setPassword={setPassword}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-        <CardFooter className="flex flex-col">
-          <SocialLogin />
-        </CardFooter>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-lg">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">Business Manager</h1>
+          <p className="mt-2 text-gray-600">Track your finances and manage your bookings</p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Sign In</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
+          <TabsContent value="login">
+            <SignInForm />
+          </TabsContent>
+          <TabsContent value="register">
+            <SignUpForm />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

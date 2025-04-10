@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import BankAccountCard from '@/components/bank/BankAccountCard';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
+import { useBankTransactions } from '@/hooks/useBankTransactions';
 
 const BankAccounts: React.FC = () => {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
@@ -19,26 +20,31 @@ const BankAccounts: React.FC = () => {
     addBankAccount,
     updateBankAccount,
     deleteBankAccount,
-    isAddDialogOpen,
-    isEditDialogOpen,
-    isDeleteDialogOpen,
-    setIsAddDialogOpen,
-    setIsEditDialogOpen,
-    setIsDeleteDialogOpen,
-    newBankAccount,
-    selectedBankAccount,
-    setSelectedBankAccount,
-    handleNewBankAccountChange,
-    handleSelectedBankAccountChange,
+    fetchBankAccounts,
+    setAccountDefault
   } = useBankAccounts();
 
+  const {
+    newTransaction,
+    isLoading: isTransactionLoading,
+    handleNewTransactionChange,
+    addTransaction
+  } = useBankTransactions();
+
   const handleAddAccount = () => {
-    setIsAddDialogOpen(true);
+    // This is handled separately in BankAccount.tsx
+    window.location.href = "/bank-account";
   };
 
   const handleTransactionClick = (accountId: string, type: 'deposit' | 'withdrawal' | 'transfer') => {
     setSelectedAccountId(accountId);
     setTransactionType(type);
+    handleNewTransactionChange('type', type);
+    if (type === 'deposit') {
+      handleNewTransactionChange('toAccount', accountId);
+    } else if (type === 'withdrawal') {
+      handleNewTransactionChange('fromAccount', accountId);
+    }
     setIsTransactionDialogOpen(true);
   };
 
@@ -77,16 +83,10 @@ const BankAccounts: React.FC = () => {
                 key={account.id}
                 account={account}
                 onEdit={() => {
-                  setSelectedBankAccount(account);
-                  setIsEditDialogOpen(true);
+                  window.location.href = `/bank-account?id=${account.id}`;
                 }}
-                onDelete={() => {
-                  setSelectedBankAccount(account);
-                  setIsDeleteDialogOpen(true);
-                }}
-                onDeposit={() => handleTransactionClick(account.id, 'deposit')}
-                onWithdraw={() => handleTransactionClick(account.id, 'withdrawal')}
-                onTransfer={() => handleTransactionClick(account.id, 'transfer')}
+                onDelete={() => deleteBankAccount(account.id)}
+                onSetDefault={() => setAccountDefault(account.id)}
               />
             ))
           )}
@@ -97,9 +97,10 @@ const BankAccounts: React.FC = () => {
       <BankTransactionDialog
         isOpen={isTransactionDialogOpen}
         onOpenChange={setIsTransactionDialogOpen}
-        accountId={selectedAccountId}
-        transactionType={transactionType}
-        accounts={bankAccounts}
+        isLoading={isTransactionLoading}
+        formData={newTransaction}
+        onFormChange={handleNewTransactionChange}
+        onSubmit={addTransaction}
       />
     </div>
   );

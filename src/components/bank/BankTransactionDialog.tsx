@@ -46,7 +46,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
     if (isOpen) {
       fetchBankAccounts();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchBankAccounts]);
 
   const getTransactionTypeLabel = (type: TransactionType) => {
     switch (type) {
