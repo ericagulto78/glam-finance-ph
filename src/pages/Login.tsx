@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
@@ -12,7 +12,9 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ register = false }) => {
-  const [activeTab, setActiveTab] = React.useState<string>(register ? 'register' : 'login');
+  const [activeTab, setActiveTab] = useState<string>(register ? 'register' : 'login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,10 +48,20 @@ const Login: React.FC<LoginProps> = ({ register = false }) => {
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
           <TabsContent value="login">
-            <SignInForm />
+            <SignInForm 
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+            />
           </TabsContent>
           <TabsContent value="register">
-            <SignUpForm />
+            <SignUpForm 
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+            />
           </TabsContent>
         </Tabs>
       </div>
