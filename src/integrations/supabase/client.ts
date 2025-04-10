@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_NEXT_PUBLIC_SUPABASE_URL || 'https://cbozlabhyzmlznhitdea.supabase.co';
@@ -105,6 +106,7 @@ export interface Booking {
   amount: number;
   status: BookingStatus;
   reservation_fee: number;
+  service_details?: string; // Added service_details property
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -121,6 +123,7 @@ export function castBookingData(data: any): Booking {
     amount: data.amount || 0,
     status: isValidBookingStatus(data.status) ? data.status : 'upcoming',
     reservation_fee: data.reservation_fee || 0,
+    service_details: data.service_details || '', // Added service_details
     user_id: data.user_id,
     created_at: data.created_at,
     updated_at: data.updated_at
