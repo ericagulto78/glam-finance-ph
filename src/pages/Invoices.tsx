@@ -3,16 +3,17 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import InvoiceTable from '@/components/invoice/InvoiceTable';
-import InvoiceFilter from '@/components/invoice/InvoiceFilter';
-import InvoiceDialog from '@/components/invoice/InvoiceDialog';
-import InvoiceView from '@/components/invoice/InvoiceView';
-import InvoicePaymentDialog from '@/components/invoice/InvoicePaymentDialog';
+import InvoiceTable from '@/components/invoices/InvoiceTable';
+import InvoiceFilter from '@/components/invoices/InvoiceFilter';
+import InvoiceDialog from '@/components/invoices/InvoiceDialog';
+import InvoiceView from '@/components/invoices/InvoiceView';
+import InvoicePaymentDialog from '@/components/invoices/InvoicePaymentDialog';
 import { 
   Invoice, 
   InvoiceStatus, 
   BankAccount,
   Booking,
+  PaymentMethod,
   supabase 
 } from '@/integrations/supabase/client';
 import { 
@@ -24,11 +25,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 const Invoices = () => {
   const { toast } = useToast();
@@ -200,26 +201,40 @@ const Invoices = () => {
     }
   };
 
-  const handleProcessPayment = async (invoiceId: string, paymentMethod: string, bankAccountId?: string) => {
+  const handleProcessPayment = async (invoiceId: string, paymentMethod: PaymentMethod, bankAccountId?: string) => {
     try {
       // Optimistically update the invoice status to 'paid'
       setInvoices(prevInvoices =>
         prevInvoices.map(invoice =>
-          invoice.id === invoiceId ? { ...invoice, status: 'paid', payment_method: paymentMethod, bank_account_id: bankAccountId } : invoice
+          invoice.id === invoiceId ? { 
+            ...invoice, 
+            status: 'paid', 
+            payment_method: paymentMethod, 
+            bank_account_id: bankAccountId 
+          } : invoice
         )
       );
 
       // Update the invoice in the database
       const { error } = await supabase
         .from('invoices')
-        .update({ status: 'paid', payment_method: paymentMethod, bank_account_id: bankAccountId })
+        .update({ 
+          status: 'paid', 
+          payment_method: paymentMethod, 
+          bank_account_id: bankAccountId 
+        })
         .eq('id', invoiceId);
 
       if (error) {
         // If there's an error, revert the optimistic update
         setInvoices(prevInvoices =>
           prevInvoices.map(invoice =>
-            invoice.id === invoiceId ? { ...invoice, status: 'pending', payment_method: 'unpaid', bank_account_id: null } : invoice
+            invoice.id === invoiceId ? { 
+              ...invoice, 
+              status: 'pending', 
+              payment_method: 'unpaid', 
+              bank_account_id: null 
+            } : invoice
           )
         );
         throw error;
@@ -284,11 +299,11 @@ const Invoices = () => {
       <PageHeader 
         title="Invoices" 
         subtitle="Manage client invoices and payments"
-        actionButton={
-          <Button onClick={handleNewInvoice}>
-            <Plus className="mr-2 h-4 w-4" /> New Invoice
-          </Button>
-        }
+        action={{
+          label: "New Invoice",
+          onClick: handleNewInvoice,
+          icon: <Plus className="mr-2 h-4 w-4" />
+        }}
       />
       
       <div className="px-6 py-4">

@@ -28,7 +28,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action }) => {
           onClick={action.onClick} 
           className="mt-4 md:mt-0"
         >
-          {action.icon && <span className="mr-2">{action.icon}</span>}
+          {action.icon}
           {action.label}
         </Button>
       )}

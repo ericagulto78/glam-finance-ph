@@ -7,7 +7,7 @@ import { formatDate } from '@/lib/utils';
 
 interface InvoiceViewProps {
   invoice: Invoice;
-  onProcessPayment: () => void;
+  onProcessPayment?: () => void;
 }
 
 const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onProcessPayment }) => {
@@ -65,7 +65,7 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onProcessPayment }) 
         </div>
       </div>
 
-      {invoice.status !== 'paid' && (
+      {invoice.status !== 'paid' && onProcessPayment && (
         <div className="pt-4">
           <Button onClick={onProcessPayment} className="w-full">
             Process Payment

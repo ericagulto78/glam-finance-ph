@@ -21,7 +21,7 @@ export const useExpenses = () => {
   const [newExpense, setNewExpense] = useState<Partial<Expense>>({
     date: new Date().toISOString().split('T')[0],
     description: '',
-    category: 'Supplies',
+    category: 'supplies', // Fixed: lowercase 'supplies' instead of 'Supplies'
     amount: 0,
     tax_deductible: true,
     is_monthly: false,
