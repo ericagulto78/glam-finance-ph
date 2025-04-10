@@ -263,7 +263,7 @@ export function useInvoices() {
       // If this was a cash payment, we need to update the undeposited funds
       if (paymentMethod === 'cash') {
         // Create a transaction for the cash payment
-        await supabase
+        await (supabase as any)
           .from('transactions')
           .insert([{
             date: new Date().toISOString().split('T')[0],
@@ -295,7 +295,7 @@ export function useInvoices() {
             .eq('id', bankAccountId);
             
           // Create a transaction for the bank deposit
-          await supabase
+          await (supabase as any)
             .from('transactions')
             .insert([{
               date: new Date().toISOString().split('T')[0],

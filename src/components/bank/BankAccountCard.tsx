@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bank, Pencil, Trash2, ChevronDown, CheckCircle } from 'lucide-react';
+import { Building, Pencil, Trash2, ChevronDown, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BankAccount } from '@/integrations/supabase/client';
 
@@ -30,7 +30,7 @@ const BankAccountCard: React.FC<BankAccountCardProps> = ({
       
       <div className="flex items-center mb-3">
         <div className="rounded-full w-10 h-10 flex items-center justify-center bg-primary/10 text-primary">
-          <Bank size={18} />
+          <Building size={18} />
         </div>
         <div className="ml-3">
           <h3 className="font-medium">{account.bankName}</h3>

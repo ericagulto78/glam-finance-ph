@@ -45,7 +45,7 @@ export function useBankTransactions() {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('transactions')
         .select('*')
         .order('date', { ascending: false });
@@ -127,7 +127,7 @@ export function useBankTransactions() {
         user_id: user.id,
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('transactions')
         .insert([transactionToInsert])
         .select();
