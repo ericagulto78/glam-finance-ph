@@ -1,6 +1,6 @@
 
-import React, { useRef } from 'react';
-import { Invoice } from '@/integrations/supabase/client';
+import React from 'react';
+import { Invoice, PaymentMethod } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -12,12 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import InvoiceForm, { InvoiceFormData } from './InvoiceForm';
 import InvoiceView from './InvoiceView';
+import InvoicePaymentDialog from './InvoicePaymentDialog';
 
 interface InvoiceDialogsProps {
   isAddDialogOpen: boolean;
   isEditDialogOpen: boolean;
   isDeleteDialogOpen: boolean;
   isViewDialogOpen: boolean;
+  isProcessPaymentDialogOpen: boolean;
   isLoading: boolean;
   newInvoice: InvoiceFormData;
   selectedInvoice: Invoice | null;
@@ -25,11 +27,13 @@ interface InvoiceDialogsProps {
   onEditDialogOpenChange: (open: boolean) => void;
   onDeleteDialogOpenChange: (open: boolean) => void;
   onViewDialogOpenChange: (open: boolean) => void;
+  onProcessPaymentDialogOpenChange: (open: boolean) => void;
   onNewInvoiceChange: (field: string, value: any) => void;
   onSelectedInvoiceChange: (field: string, value: any) => void;
   onSubmitNewInvoice: () => void;
   onUpdateInvoice: () => void;
   onConfirmDelete: () => void;
+  onProcessPayment: (paymentMethod: PaymentMethod, bankAccountId?: string) => Promise<void>;
 }
 
 export const InvoiceDialogs: React.FC<InvoiceDialogsProps> = ({
@@ -37,6 +41,7 @@ export const InvoiceDialogs: React.FC<InvoiceDialogsProps> = ({
   isEditDialogOpen,
   isDeleteDialogOpen,
   isViewDialogOpen,
+  isProcessPaymentDialogOpen,
   isLoading,
   newInvoice,
   selectedInvoice,
@@ -44,35 +49,16 @@ export const InvoiceDialogs: React.FC<InvoiceDialogsProps> = ({
   onEditDialogOpenChange,
   onDeleteDialogOpenChange,
   onViewDialogOpenChange,
+  onProcessPaymentDialogOpenChange,
   onNewInvoiceChange,
   onSelectedInvoiceChange,
   onSubmitNewInvoice,
   onUpdateInvoice,
   onConfirmDelete,
+  onProcessPayment,
 }) => {
-  const invoiceRef = useRef<HTMLDivElement>(null);
-
   return (
     <>
-      {/* View Invoice Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={onViewDialogOpenChange}>
-        <DialogContent className="sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>View Invoice</DialogTitle>
-            <DialogDescription>
-              View invoice details and print or download.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedInvoice && (
-            <InvoiceView 
-              ref={invoiceRef}
-              invoice={selectedInvoice} 
-              onClose={() => onViewDialogOpenChange(false)} 
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Add Invoice Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={onAddDialogOpenChange}>
         <DialogContent className="sm:max-w-[525px]">
@@ -138,6 +124,38 @@ export const InvoiceDialogs: React.FC<InvoiceDialogsProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Invoice Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={onViewDialogOpenChange}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Invoice Details</DialogTitle>
+          </DialogHeader>
+          {selectedInvoice && (
+            <InvoiceView 
+              invoice={selectedInvoice} 
+              onProcessPayment={() => {
+                onViewDialogOpenChange(false);
+                onProcessPaymentDialogOpenChange(true);
+              }}
+            />
+          )}
+          <DialogFooter>
+            <Button onClick={() => onViewDialogOpenChange(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Process Payment Dialog */}
+      <InvoicePaymentDialog
+        invoice={selectedInvoice}
+        isOpen={isProcessPaymentDialogOpen}
+        isLoading={isLoading}
+        onOpenChange={onProcessPaymentDialogOpenChange}
+        onProcessPayment={onProcessPayment}
+      />
     </>
   );
 };

@@ -26,12 +26,13 @@ const Dashboard = () => {
       
       setIsLoading(true);
       try {
-        // Fetch total revenue (from bookings)
-        const { data: bookingsData, error: bookingsError } = await supabase
-          .from('bookings')
-          .select('amount');
+        // Fetch total revenue (from invoices paid)
+        const { data: invoicesData, error: invoicesError } = await supabase
+          .from('invoices')
+          .select('amount')
+          .eq('status', 'paid');
         
-        if (bookingsError) throw bookingsError;
+        if (invoicesError) throw invoicesError;
         
         // Fetch total expenses
         const { data: expensesData, error: expensesError } = await supabase
@@ -58,11 +59,11 @@ const Dashboard = () => {
         // Calculate unique clients
         const uniqueClients = new Set(clientsData.map(booking => booking.client)).size;
         
-        // Calculate total revenue
-        const totalRevenue = bookingsData.reduce((sum, booking) => sum + booking.amount, 0);
+        // Calculate total revenue from paid invoices
+        const totalRevenue = invoicesData?.reduce((sum, invoice) => sum + invoice.amount, 0) || 0;
         
         // Calculate total expenses
-        const totalExpenses = expensesData.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalExpenses = expensesData?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
         
         setStats({
           totalRevenue,
@@ -94,7 +95,7 @@ const Dashboard = () => {
             title="Total Revenue" 
             value={`₱${stats.totalRevenue.toLocaleString()}`}
             icon={<DollarSign size={20} />}
-            trend={{ value: "From all bookings", positive: true }}
+            trend={{ value: "From paid invoices", positive: true }}
           />
           <StatCard 
             title="Total Expenses" 

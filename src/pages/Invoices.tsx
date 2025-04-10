@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, CreditCard } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
 import InvoiceTable from '@/components/invoices/InvoiceTable';
@@ -19,6 +19,7 @@ const Invoices = () => {
     isEditDialogOpen,
     isDeleteDialogOpen,
     isViewDialogOpen,
+    isProcessPaymentDialogOpen,
     isLoading,
     setSearchTerm,
     setStatusFilter,
@@ -27,11 +28,13 @@ const Invoices = () => {
     setIsEditDialogOpen,
     setIsDeleteDialogOpen,
     setIsViewDialogOpen,
+    setIsProcessPaymentDialogOpen,
     handleNewInvoiceChange,
     handleSelectedInvoiceChange,
     addInvoice,
     updateInvoice,
-    deleteInvoice
+    deleteInvoice,
+    processInvoicePayment
   } = useInvoices();
 
   const handleAddInvoice = () => {
@@ -51,6 +54,11 @@ const Invoices = () => {
   const handleDeleteInvoice = (invoice: any) => {
     setSelectedInvoice(invoice);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleProcessPayment = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setIsProcessPaymentDialogOpen(true);
   };
 
   return (
@@ -81,6 +89,7 @@ const Invoices = () => {
               onViewInvoice={handleViewInvoice}
               onEditInvoice={handleEditInvoice}
               onDeleteInvoice={handleDeleteInvoice}
+              onProcessPayment={handleProcessPayment}
             />
           </CardContent>
         </Card>
@@ -91,6 +100,7 @@ const Invoices = () => {
         isEditDialogOpen={isEditDialogOpen}
         isDeleteDialogOpen={isDeleteDialogOpen}
         isViewDialogOpen={isViewDialogOpen}
+        isProcessPaymentDialogOpen={isProcessPaymentDialogOpen}
         isLoading={isLoading}
         newInvoice={newInvoice}
         selectedInvoice={selectedInvoice}
@@ -98,11 +108,13 @@ const Invoices = () => {
         onEditDialogOpenChange={setIsEditDialogOpen}
         onDeleteDialogOpenChange={setIsDeleteDialogOpen}
         onViewDialogOpenChange={setIsViewDialogOpen}
+        onProcessPaymentDialogOpenChange={setIsProcessPaymentDialogOpen}
         onNewInvoiceChange={handleNewInvoiceChange}
         onSelectedInvoiceChange={handleSelectedInvoiceChange}
         onSubmitNewInvoice={addInvoice}
         onUpdateInvoice={updateInvoice}
         onConfirmDelete={deleteInvoice}
+        onProcessPayment={processInvoicePayment}
       />
     </div>
   );

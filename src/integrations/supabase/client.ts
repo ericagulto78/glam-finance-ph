@@ -29,6 +29,7 @@ export const isAdmin = (email: string | undefined) => {
 export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue';
 export type TransactionType = 'deposit' | 'withdrawal' | 'transfer';
+export type PaymentMethod = 'cash' | 'bank' | 'unpaid';
 
 // Type guards to ensure status values are correctly typed
 export const isValidBookingStatus = (status: string): status is BookingStatus => {
@@ -43,6 +44,10 @@ export const isValidTransactionType = (type: string): type is TransactionType =>
   return ['deposit', 'withdrawal', 'transfer'].includes(type);
 };
 
+export const isValidPaymentMethod = (method: string): method is PaymentMethod => {
+  return ['cash', 'bank', 'unpaid'].includes(method);
+};
+
 // Helper functions to cast Supabase data to our frontend types
 export const castBookingData = (data: any): Booking => {
   return {
@@ -55,7 +60,9 @@ export const castBookingData = (data: any): Booking => {
 export const castInvoiceData = (data: any): Invoice => {
   return {
     ...data,
-    status: isValidInvoiceStatus(data.status) ? data.status : 'pending'
+    status: isValidInvoiceStatus(data.status) ? data.status : 'pending',
+    payment_method: isValidPaymentMethod(data.payment_method) ? data.payment_method : 'unpaid',
+    bank_account_id: data.bank_account_id || null
   };
 };
 
@@ -128,6 +135,9 @@ export interface Invoice {
   due_date: string;
   amount: number;
   status: InvoiceStatus;
+  payment_method: PaymentMethod;
+  bank_account_id?: string | null;
+  booking_id?: string | null;
   user_id?: string;
   created_at?: string;
   updated_at?: string;

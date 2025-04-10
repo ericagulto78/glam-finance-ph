@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,22 @@ import {
   CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
-import { Plus, PenSquare, Trash2, CreditCard, DollarSign, Wallet } from 'lucide-react';
+import { 
+  Plus, 
+  PenSquare, 
+  Trash2, 
+  CreditCard, 
+  DollarSign, 
+  Wallet,
+  ArrowRightLeft,
+  ArrowUpRight,
+  ArrowDownLeft
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useBankAccounts, BankAccountFormData } from '@/hooks/useBankAccounts';
+import { BankAccountFormData, useBankAccounts } from '@/hooks/useBankAccounts';
+import { useBankTransactions, TransactionFormData } from '@/hooks/useBankTransactions';
+import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
+import BankAccountCard from '@/components/bank/BankAccountCard';
 
 const BankAccount = () => {
   const {
@@ -30,6 +43,18 @@ const BankAccount = () => {
     deleteBankAccount,
     setAccountDefault
   } = useBankAccounts();
+
+  const {
+    transactions,
+    newTransaction,
+    isAddDialogOpen: isTransactionDialogOpen,
+    isLoading: isTransactionLoading,
+    setIsAddDialogOpen: setIsTransactionDialogOpen,
+    handleNewTransactionChange,
+    addTransaction
+  } = useBankTransactions();
+
+  const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal' | 'transfer'>('deposit');
 
   const form = useForm<BankAccountFormData>({
     defaultValues: {
@@ -92,9 +117,13 @@ const BankAccount = () => {
     form.reset();
   };
 
-  const handleSetDefault = (id: string) => {
-    setAccountDefault(id);
+  const handleNewTransaction = (type: 'deposit' | 'withdrawal' | 'transfer') => {
+    setTransactionType(type);
+    handleNewTransactionChange('type', type);
+    setIsTransactionDialogOpen(true);
   };
+
+  const recentTransactions = transactions.slice(0, 5);
 
   return (
     <div className="h-full">
@@ -153,6 +182,38 @@ const BankAccount = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+        
+        {/* Transaction buttons */}
+        {!isEditing && bankAccounts.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-6">
+            <Button 
+              variant="outline" 
+              onClick={() => handleNewTransaction('deposit')}
+              className="flex items-center"
+            >
+              <ArrowDownLeft size={16} className="mr-2 text-green-500" />
+              Deposit Money
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => handleNewTransaction('withdrawal')}
+              className="flex items-center"
+            >
+              <ArrowUpRight size={16} className="mr-2 text-red-500" />
+              Withdraw Money
+            </Button>
+            {bankAccounts.length >= 2 && (
+              <Button 
+                variant="outline" 
+                onClick={() => handleNewTransaction('transfer')}
+                className="flex items-center"
+              >
+                <ArrowRightLeft size={16} className="mr-2 text-blue-500" />
+                Transfer Funds
+              </Button>
+            )}
           </div>
         )}
 
@@ -245,87 +306,102 @@ const BankAccount = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Bank Accounts</CardTitle>
-              <CardDescription>
-                Manage your bank accounts for receiving payments from clients
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {bankAccounts.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">You haven't added any bank accounts yet</p>
-                  <Button onClick={handleAddAccount}>
-                    <Plus size={16} className="mr-2" />
-                    Add Bank Account
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {bankAccounts.map((account) => (
-                    <div 
-                      key={account.id}
-                      className={`p-4 border rounded-lg relative ${account.isDefault ? 'border-rose' : 'border-border'}`}
-                    >
-                      {account.isDefault && (
-                        <Badge className="absolute top-2 right-2 bg-rose text-rose-foreground">
-                          Default
-                        </Badge>
-                      )}
-                      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                        <div className="md:col-span-2">
-                          <p className="text-sm text-muted-foreground">Bank Information</p>
-                          <p className="font-medium">{account.bankName}</p>
-                          <p className="text-sm text-muted-foreground mt-1">Account: {account.accountNumber}</p>
-                          <p className="text-sm">{account.accountName}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Balance</p>
-                          <p className="font-medium">₱{account.balance.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Undeposited</p>
-                          <p className="font-medium">₱{account.undeposited.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Total</p>
-                          <p className="font-medium">₱{(account.balance + account.undeposited).toLocaleString()}</p>
-                        </div>
-                        
-                        <div className="flex justify-end items-start gap-2">
-                          {!account.isDefault && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSetDefault(account.id)}
-                            >
-                              Set as Default
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditAccount(account)}
-                          >
-                            <PenSquare size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteAccount(account.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </div>
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Bank Accounts</CardTitle>
+                <CardDescription>
+                  Manage your bank accounts for receiving payments from clients
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bankAccounts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">You haven't added any bank accounts yet</p>
+                    <Button onClick={handleAddAccount}>
+                      <Plus size={16} className="mr-2" />
+                      Add Bank Account
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {bankAccounts.map((account) => (
+                      <BankAccountCard
+                        key={account.id}
+                        account={account}
+                        onEdit={handleEditAccount}
+                        onDelete={handleDeleteAccount}
+                        onSetDefault={setAccountDefault}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {bankAccounts.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Transactions</CardTitle>
+                  <CardDescription>
+                    Your latest account transactions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {recentTransactions.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground">No transactions yet</p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentTransactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between border-b pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center
+                              ${transaction.type === 'deposit' ? 'bg-green-100 text-green-600' : 
+                                transaction.type === 'withdrawal' ? 'bg-red-100 text-red-600' : 
+                                'bg-blue-100 text-blue-600'}`}>
+                              {transaction.type === 'deposit' ? (
+                                <ArrowDownLeft size={16} />
+                              ) : transaction.type === 'withdrawal' ? (
+                                <ArrowUpRight size={16} />
+                              ) : (
+                                <ArrowRightLeft size={16} />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{transaction.description}</p>
+                              <p className="text-xs text-muted-foreground">{transaction.date}</p>
+                            </div>
+                          </div>
+                          <div className={`font-medium ${
+                            transaction.type === 'deposit' ? 'text-green-600' : 
+                            transaction.type === 'withdrawal' ? 'text-red-600' : 
+                            'text-blue-600'
+                          }`}>
+                            {transaction.type === 'deposit' ? '+' : 
+                             transaction.type === 'withdrawal' ? '-' : ''}
+                            ₱{transaction.amount.toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
+
+        {/* Transaction Dialog */}
+        <BankTransactionDialog
+          isOpen={isTransactionDialogOpen}
+          isLoading={isTransactionLoading}
+          formData={newTransaction}
+          onOpenChange={setIsTransactionDialogOpen}
+          onFormChange={handleNewTransactionChange}
+          onSubmit={addTransaction}
+        />
       </div>
     </div>
   );

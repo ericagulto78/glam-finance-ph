@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { InvoiceStatus } from '@/integrations/supabase/client';
+import { InvoiceStatus, PaymentMethod } from '@/integrations/supabase/client';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 export interface InvoiceFormData {
   id?: string;
@@ -20,6 +21,9 @@ export interface InvoiceFormData {
   due_date: string;
   amount: number;
   status: InvoiceStatus;
+  payment_method: PaymentMethod;
+  bank_account_id?: string | null;
+  booking_id?: string | null;
 }
 
 interface InvoiceFormProps {
@@ -39,6 +43,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   onSubmit,
   submitLabel,
 }) => {
+  const { bankAccounts, fetchBankAccounts } = useBankAccounts();
+  const [showBankSelector, setShowBankSelector] = useState(false);
+
+  useEffect(() => {
+    fetchBankAccounts();
+    setShowBankSelector(formData.payment_method === 'bank');
+  }, []);
+
+  const handlePaymentMethodChange = (value: string) => {
+    const method = value as PaymentMethod;
+    onFormChange('payment_method', method);
+    setShowBankSelector(method === 'bank');
+    
+    // Clear bank_account_id if not bank
+    if (method !== 'bank') {
+      onFormChange('bank_account_id', null);
+    }
+  };
+
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
@@ -79,7 +102,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="amount">Amount (₱)</Label>
           <Input 
@@ -99,13 +122,51 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="payment_method">Payment Method</Label>
+          <Select 
+            value={formData.payment_method}
+            onValueChange={handlePaymentMethodChange}
+          >
+            <SelectTrigger id="payment_method">
+              <SelectValue placeholder="Select payment method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unpaid">Unpaid</SelectItem>
+              <SelectItem value="cash">Cash</SelectItem>
+              <SelectItem value="bank">Bank</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+      
+      {showBankSelector && (
+        <div className="space-y-2">
+          <Label htmlFor="bank_account_id">Bank Account</Label>
+          <Select 
+            value={formData.bank_account_id || ''}
+            onValueChange={(value) => onFormChange('bank_account_id', value)}
+          >
+            <SelectTrigger id="bank_account_id">
+              <SelectValue placeholder="Select bank account" />
+            </SelectTrigger>
+            <SelectContent>
+              {bankAccounts.map(account => (
+                <SelectItem key={account.id} value={account.id}>
+                  {account.bankName} - {account.accountName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={onCancel}>
           Cancel

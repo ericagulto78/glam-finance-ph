@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInvoices } from '@/hooks/useInvoices';
 import { 
   supabase, 
   Booking, 
@@ -32,6 +33,7 @@ export function useBookings() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { addBookingInvoice } = useInvoices();
   
   // Initial booking form state
   const initialBookingState: BookingFormData = {
@@ -116,10 +118,16 @@ export function useBookings() {
       setIsAddDialogOpen(false);
       // Immediately fetch bookings after adding
       await fetchBookings();
+      
+      // Create an invoice for this booking
+      if (data && data.length > 0) {
+        await addBookingInvoice(data[0] as Booking);
+      }
+      
       setNewBooking(initialBookingState);
       toast({
         title: "Booking added",
-        description: "The booking has been successfully added",
+        description: "The booking has been successfully added with an invoice",
       });
     } catch (error: any) {
       console.error('Error adding booking:', error);
