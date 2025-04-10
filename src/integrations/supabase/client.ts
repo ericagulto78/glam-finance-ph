@@ -42,7 +42,8 @@ export const isValidInvoiceStatus = (status: string): status is InvoiceStatus =>
 export const castBookingData = (data: any): Booking => {
   return {
     ...data,
-    status: isValidBookingStatus(data.status) ? data.status : 'upcoming'
+    status: isValidBookingStatus(data.status) ? data.status : 'upcoming',
+    reservation_fee: data.reservation_fee || 0
   };
 };
 
@@ -50,6 +51,13 @@ export const castInvoiceData = (data: any): Invoice => {
   return {
     ...data,
     status: isValidInvoiceStatus(data.status) ? data.status : 'pending'
+  };
+};
+
+export const castExpenseData = (data: any): Expense => {
+  return {
+    ...data,
+    is_monthly: data.is_monthly || false
   };
 };
 
@@ -63,6 +71,7 @@ export interface Booking {
   location: string;
   amount: number;
   status: BookingStatus;
+  reservation_fee?: number;
   user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -75,6 +84,7 @@ export interface Expense {
   category: string;
   amount: number;
   tax_deductible: boolean;
+  is_monthly?: boolean;
   user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -92,3 +102,14 @@ export interface Invoice {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  isDefault: boolean;
+  balance?: number;
+  undeposited?: number;
+}
+

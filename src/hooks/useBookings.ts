@@ -18,6 +18,7 @@ export interface BookingFormData {
   location: string;
   amount: number;
   status: BookingStatus;
+  reservation_fee?: number; // Added reservation fee
 }
 
 export function useBookings() {
@@ -41,6 +42,7 @@ export function useBookings() {
     location: '',
     amount: 0,
     status: 'upcoming',
+    reservation_fee: 0, // Default reservation fee
   };
   
   const [newBooking, setNewBooking] = useState<BookingFormData>(initialBookingState);
@@ -100,6 +102,7 @@ export function useBookings() {
         location: newBooking.location,
         amount: newBooking.amount,
         status: newBooking.status,
+        reservation_fee: newBooking.reservation_fee || 0,
         user_id: user.id,
       };
 
@@ -111,7 +114,8 @@ export function useBookings() {
       if (error) throw error;
       
       setIsAddDialogOpen(false);
-      fetchBookings();
+      // Immediately fetch bookings after adding
+      await fetchBookings();
       setNewBooking(initialBookingState);
       toast({
         title: "Booking added",
@@ -145,13 +149,15 @@ export function useBookings() {
           location: selectedBooking.location,
           amount: selectedBooking.amount,
           status: selectedBooking.status,
+          reservation_fee: selectedBooking.reservation_fee || 0
         })
         .eq('id', selectedBooking.id);
 
       if (error) throw error;
       
       setIsEditDialogOpen(false);
-      fetchBookings();
+      // Immediately fetch bookings after updating
+      await fetchBookings();
       toast({
         title: "Booking updated",
         description: "The booking has been successfully updated",
@@ -182,7 +188,8 @@ export function useBookings() {
       if (error) throw error;
       
       setIsDeleteDialogOpen(false);
-      fetchBookings();
+      // Immediately fetch bookings after deleting
+      await fetchBookings();
       toast({
         title: "Booking deleted",
         description: `Booking for ${selectedBooking.client} has been deleted.`,

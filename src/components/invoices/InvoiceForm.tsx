@@ -10,22 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BookingStatus } from '@/integrations/supabase/client';
+import { InvoiceStatus } from '@/integrations/supabase/client';
 
-export interface BookingFormData {
+export interface InvoiceFormData {
   id?: string;
+  invoice_number: string;
   client: string;
-  service: string;
-  date: string;
-  time: string;
-  location: string;
+  issue_date: string;
+  due_date: string;
   amount: number;
-  status: BookingStatus;
-  reservation_fee?: number;
+  status: InvoiceStatus;
 }
 
-interface BookingFormProps {
-  formData: BookingFormData;
+interface InvoiceFormProps {
+  formData: InvoiceFormData;
   isLoading: boolean;
   onFormChange: (field: string, value: any) => void;
   onCancel: () => void;
@@ -33,7 +31,7 @@ interface BookingFormProps {
   submitLabel: string;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({
+const InvoiceForm: React.FC<InvoiceFormProps> = ({
   formData,
   isLoading,
   onFormChange,
@@ -45,6 +43,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
+          <Label htmlFor="invoice_number">Invoice Number</Label>
+          <Input 
+            id="invoice_number" 
+            value={formData.invoice_number}
+            onChange={(e) => onFormChange('invoice_number', e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="client">Client Name</Label>
           <Input 
             id="client" 
@@ -52,45 +58,30 @@ const BookingForm: React.FC<BookingFormProps> = ({
             onChange={(e) => onFormChange('client', e.target.value)}
           />
         </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="service">Service</Label>
+          <Label htmlFor="issue_date">Issue Date</Label>
           <Input 
-            id="service" 
-            value={formData.service}
-            onChange={(e) => onFormChange('service', e.target.value)}
+            id="issue_date" 
+            type="date" 
+            value={formData.issue_date}
+            onChange={(e) => onFormChange('issue_date', e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="due_date">Due Date</Label>
+          <Input 
+            id="due_date" 
+            type="date" 
+            value={formData.due_date}
+            onChange={(e) => onFormChange('due_date', e.target.value)}
           />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input 
-            id="date" 
-            type="date" 
-            value={formData.date}
-            onChange={(e) => onFormChange('date', e.target.value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="time">Time</Label>
-          <Input 
-            id="time" 
-            value={formData.time}
-            onChange={(e) => onFormChange('time', e.target.value)}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input 
-          id="location" 
-          value={formData.location}
-          onChange={(e) => onFormChange('location', e.target.value)}
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="amount">Total Amount (₱)</Label>
+          <Label htmlFor="amount">Amount (₱)</Label>
           <Input 
             id="amount" 
             type="number" 
@@ -99,27 +90,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="reservation_fee">Reservation Fee (₱)</Label>
-          <Input 
-            id="reservation_fee" 
-            type="number" 
-            value={(formData.reservation_fee || 0).toString()}
-            onChange={(e) => onFormChange('reservation_fee', parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select 
             value={formData.status}
-            onValueChange={(value) => onFormChange('status', value as BookingStatus)}
+            onValueChange={(value) => onFormChange('status', value as InvoiceStatus)}
           >
             <SelectTrigger id="status">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -140,4 +122,4 @@ const BookingForm: React.FC<BookingFormProps> = ({
   );
 };
 
-export default BookingForm;
+export default InvoiceForm;

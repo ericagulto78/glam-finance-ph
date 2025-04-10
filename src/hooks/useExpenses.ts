@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, type Expense } from '@/integrations/supabase/client';
+import { supabase, type Expense, castExpenseData } from '@/integrations/supabase/client';
 
 export const useExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -24,6 +24,7 @@ export const useExpenses = () => {
     category: 'Supplies',
     amount: 0,
     tax_deductible: true,
+    is_monthly: false,
   });
 
   // Fetch expenses from Supabase
@@ -39,7 +40,9 @@ export const useExpenses = () => {
 
       if (error) throw error;
       
-      setExpenses(data || []);
+      // Cast the data to ensure it matches our Expense type
+      const typedExpenses = data?.map(expense => castExpenseData(expense)) || [];
+      setExpenses(typedExpenses);
     } catch (error: any) {
       console.error('Error fetching expenses:', error);
       toast({
@@ -95,6 +98,7 @@ export const useExpenses = () => {
         category: newExpense.category || '',
         amount: newExpense.amount || 0,
         tax_deductible: newExpense.tax_deductible ?? true,
+        is_monthly: newExpense.is_monthly ?? false,
         user_id: user.id
       };
       
@@ -106,7 +110,7 @@ export const useExpenses = () => {
       if (error) throw error;
       
       setIsAddDialogOpen(false);
-      fetchExpenses();
+      await fetchExpenses();
       toast({
         title: "Expense added",
         description: "The expense has been successfully added",
@@ -136,13 +140,14 @@ export const useExpenses = () => {
           category: selectedExpense.category,
           amount: selectedExpense.amount,
           tax_deductible: selectedExpense.tax_deductible,
+          is_monthly: selectedExpense.is_monthly,
         })
         .eq('id', selectedExpense.id);
 
       if (error) throw error;
       
       setIsEditDialogOpen(false);
-      fetchExpenses();
+      await fetchExpenses();
       toast({
         title: "Expense updated",
         description: "The expense has been successfully updated",
@@ -172,7 +177,7 @@ export const useExpenses = () => {
       if (error) throw error;
       
       setIsDeleteDialogOpen(false);
-      fetchExpenses();
+      await fetchExpenses();
       toast({
         title: "Expense deleted",
         description: `Expense "${selectedExpense.description}" has been deleted.`,
@@ -225,6 +230,7 @@ export const useExpenses = () => {
     handleSelectedExpenseChange,
     addExpense,
     updateExpense,
-    deleteExpense
+    deleteExpense,
+    fetchExpenses
   };
 };
