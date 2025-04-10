@@ -30,12 +30,13 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 const Invoices = () => {
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const { bankAccounts, fetchBankAccounts } = useBankAccounts();
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -201,14 +202,16 @@ const Invoices = () => {
     }
   };
 
-  const handleProcessPayment = async (invoiceId: string, paymentMethod: PaymentMethod, bankAccountId?: string) => {
+  const handleProcessPayment = async (paymentMethod: PaymentMethod, bankAccountId?: string) => {
     try {
+      if (!currentInvoice) return;
+      
       // Optimistically update the invoice status to 'paid'
       setInvoices(prevInvoices =>
         prevInvoices.map(invoice =>
-          invoice.id === invoiceId ? { 
+          invoice.id === currentInvoice.id ? { 
             ...invoice, 
-            status: 'paid', 
+            status: 'paid' as InvoiceStatus, 
             payment_method: paymentMethod, 
             bank_account_id: bankAccountId 
           } : invoice
@@ -223,13 +226,13 @@ const Invoices = () => {
           payment_method: paymentMethod, 
           bank_account_id: bankAccountId 
         })
-        .eq('id', invoiceId);
+        .eq('id', currentInvoice.id);
 
       if (error) {
         // If there's an error, revert the optimistic update
         setInvoices(prevInvoices =>
           prevInvoices.map(invoice =>
-            invoice.id === invoiceId ? { 
+            invoice.id === currentInvoice.id ? { 
               ...invoice, 
               status: 'pending', 
               payment_method: 'unpaid', 
@@ -353,7 +356,13 @@ const Invoices = () => {
           }}
         >
           <DialogContent className="max-w-3xl">
-            <InvoiceView invoice={currentInvoice} />
+            <InvoiceView 
+              invoice={currentInvoice} 
+              onProcessPayment={() => {
+                setIsViewModalOpen(false);
+                setIsPaymentModalOpen(true);
+              }}
+            />
           </DialogContent>
         </Dialog>
       )}
@@ -361,10 +370,10 @@ const Invoices = () => {
       {currentInvoice && isPaymentModalOpen && (
         <InvoicePaymentDialog
           isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onSubmit={handleProcessPayment}
+          onOpenChange={setIsPaymentModalOpen}
+          onProcessPayment={handleProcessPayment}
           invoice={currentInvoice}
-          bankAccounts={bankAccounts}
+          isLoading={isLoading}
         />
       )}
       
