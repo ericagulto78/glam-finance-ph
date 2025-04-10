@@ -1,67 +1,79 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowDown, ArrowUp, Scissors, ShoppingBag, Coffee, Tag } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase, Transaction, castTransactionData } from '@/integrations/supabase/client';
 
-// Transaction type definition
-interface Transaction {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  type: 'income' | 'expense';
-  category: string;
-  icon: React.ReactNode;
-}
-
-const transactionIcons = {
-  supplies: <ShoppingBag size={16} />,
-  equipment: <Scissors size={16} />,
-  food: <Coffee size={16} />,
-  service: <Tag size={16} />,
+const typeIcons = {
+  deposit: <ArrowDownLeft size={16} className="text-green-500" />,
+  withdrawal: <ArrowUpRight size={16} className="text-red-500" />,
+  transfer: <RefreshCw size={16} className="text-blue-500" />,
 };
 
-// Sample data for recent transactions
-const recentTransactions: Transaction[] = [
-  {
-    id: '1',
-    description: 'Makeup supplies',
-    amount: 1200,
-    date: '2025-04-06',
-    type: 'expense',
-    category: 'supplies',
-    icon: transactionIcons.supplies,
-  },
-  {
-    id: '2',
-    description: 'Wedding makeup service',
-    amount: 5000,
-    date: '2025-04-05',
-    type: 'income',
-    category: 'service',
-    icon: transactionIcons.service,
-  },
-  {
-    id: '3',
-    description: 'Beauty equipment',
-    amount: 3500,
-    date: '2025-04-03',
-    type: 'expense',
-    category: 'equipment',
-    icon: transactionIcons.equipment,
-  },
-  {
-    id: '4',
-    description: 'Lunch with client',
-    amount: 850,
-    date: '2025-04-02',
-    type: 'expense',
-    category: 'food',
-    icon: transactionIcons.food,
-  },
-];
-
 const RecentTransactions: React.FC = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchRecentTransactions = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(5);
+          
+        if (error) throw error;
+        
+        // Cast the data to ensure it matches our Transaction type
+        const typedTransactions = data?.map(transaction => castTransactionData(transaction)) || [];
+        setTransactions(typedTransactions);
+      } catch (error) {
+        console.error('Error fetching recent transactions:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRecentTransactions();
+    
+    // Set up a subscription to transactions table
+    const subscription = supabase
+      .channel('transactions_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'transactions' }, 
+        fetchRecentTransactions
+      )
+      .subscribe();
+      
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  
+  const formatAmount = (amount: number, type: string) => {
+    return type === 'deposit' ? `+₱${amount.toLocaleString()}` : `-₱${amount.toLocaleString()}`;
+  };
+  
+  const getTypeLabel = (type: string) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -69,37 +81,35 @@ const RecentTransactions: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {recentTransactions.map((transaction) => (
-            <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/10 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${
-                  transaction.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                }`}>
-                  {transaction.type === 'income' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-                </div>
-                <div>
-                  <p className="font-medium">{transaction.description}</p>
-                  <div className="flex items-center text-xs text-muted-foreground gap-2">
-                    <span>{new Date(transaction.date).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}</span>
-                    <div className="flex items-center">
-                      <span className="bg-muted px-1.5 py-0.5 rounded flex items-center gap-1">
-                        {transaction.icon}
-                        {transaction.category}
-                      </span>
+          {isLoading ? (
+            <div className="text-center py-4">Loading transactions...</div>
+          ) : transactions.length > 0 ? (
+            transactions.map((transaction) => (
+              <div key={transaction.id} className="p-4 border rounded-lg hover:bg-accent/10 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      {typeIcons[transaction.type]}
                     </div>
+                    <div>
+                      <h4 className="font-medium">{transaction.description}</h4>
+                      <p className="text-sm text-muted-foreground">{formatDate(transaction.date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className={transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'}>
+                      {formatAmount(transaction.amount, transaction.type)}
+                    </span>
+                    <Badge variant="outline" className="mt-1">
+                      {getTypeLabel(transaction.type)}
+                    </Badge>
                   </div>
                 </div>
               </div>
-              <span className={`font-medium ${
-                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {transaction.type === 'income' ? '+' : '-'}₱{transaction.amount.toLocaleString()}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">No recent transactions</div>
+          )}
         </div>
       </CardContent>
     </Card>

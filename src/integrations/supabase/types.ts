@@ -58,6 +58,7 @@ export type Database = {
           location: string
           reservation_fee: number | null
           service: string
+          service_details: string | null
           status: string
           time: string
           updated_at: string
@@ -72,6 +73,7 @@ export type Database = {
           location: string
           reservation_fee?: number | null
           service: string
+          service_details?: string | null
           status: string
           time: string
           updated_at?: string
@@ -86,6 +88,7 @@ export type Database = {
           location?: string
           reservation_fee?: number | null
           service?: string
+          service_details?: string | null
           status?: string
           time?: string
           updated_at?: string
@@ -135,41 +138,146 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
+          bank_account_id: string | null
+          booking_id: string | null
           client: string
           created_at: string
           due_date: string
           id: string
           invoice_number: string
           issue_date: string
+          payment_method: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           amount: number
+          bank_account_id?: string | null
+          booking_id?: string | null
           client: string
           created_at?: string
           due_date: string
           id?: string
           invoice_number: string
           issue_date: string
+          payment_method?: string | null
           status: string
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
+          bank_account_id?: string | null
+          booking_id?: string | null
           client?: string
           created_at?: string
           due_date?: string
           id?: string
           invoice_number?: string
           issue_date?: string
+          payment_method?: string | null
           status?: string
           updated_at?: string
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_types: {
+        Row: {
+          created_at: string
+          default_price: number
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_price?: number
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_price?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          description: string
+          fromAccount: string | null
+          id: string
+          toAccount: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date: string
+          description: string
+          fromAccount?: string | null
+          id?: string
+          toAccount?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          description?: string
+          fromAccount?: string | null
+          id?: string
+          toAccount?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_fromAccount_fkey"
+            columns: ["fromAccount"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_toAccount_fkey"
+            columns: ["toAccount"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Booking } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -11,17 +11,22 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import BookingForm, { BookingFormData } from './BookingForm';
+import BookingDetails from './BookingDetails';
+import { useInvoices } from '@/hooks/useInvoices';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BookingDialogsProps {
   isAddDialogOpen: boolean;
   isEditDialogOpen: boolean;
   isDeleteDialogOpen: boolean;
+  isViewDialogOpen?: boolean;
   isLoading: boolean;
   newBooking: BookingFormData;
   selectedBooking: Booking | null;
   onAddDialogOpenChange: (open: boolean) => void;
   onEditDialogOpenChange: (open: boolean) => void;
   onDeleteDialogOpenChange: (open: boolean) => void;
+  onViewDialogOpenChange?: (open: boolean) => void;
   onNewBookingChange: (field: string, value: any) => void;
   onSelectedBookingChange: (field: string, value: any) => void;
   onSubmitNewBooking: () => void;
@@ -33,18 +38,56 @@ export const BookingDialogs: React.FC<BookingDialogsProps> = ({
   isAddDialogOpen,
   isEditDialogOpen,
   isDeleteDialogOpen,
+  isViewDialogOpen = false,
   isLoading,
   newBooking,
   selectedBooking,
   onAddDialogOpenChange,
   onEditDialogOpenChange,
   onDeleteDialogOpenChange,
+  onViewDialogOpenChange = () => {},
   onNewBookingChange,
   onSelectedBookingChange,
   onSubmitNewBooking,
   onUpdateBooking,
   onConfirmDelete,
 }) => {
+  const { addBookingInvoice } = useInvoices();
+  const [hasInvoice, setHasInvoice] = useState(false);
+
+  useEffect(() => {
+    if (selectedBooking && isViewDialogOpen) {
+      checkInvoiceExists(selectedBooking.id);
+    }
+  }, [selectedBooking, isViewDialogOpen]);
+
+  const checkInvoiceExists = async (bookingId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('booking_id', bookingId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setHasInvoice(!!data);
+    } catch (error) {
+      console.error('Error checking invoice:', error);
+      setHasInvoice(false);
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!selectedBooking) return;
+    
+    try {
+      await addBookingInvoice(selectedBooking);
+      setHasInvoice(true);
+    } catch (error) {
+      console.error('Error creating invoice from booking:', error);
+    }
+  };
+
   return (
     <>
       {/* Add Booking Dialog */}
@@ -88,6 +131,35 @@ export const BookingDialogs: React.FC<BookingDialogsProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* View Booking Dialog */}
+      {selectedBooking && (
+        <Dialog open={isViewDialogOpen} onOpenChange={onViewDialogOpenChange}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Booking Details</DialogTitle>
+            </DialogHeader>
+            <BookingDetails 
+              booking={selectedBooking} 
+              onCreateInvoice={handleCreateInvoice}
+              hasInvoice={hasInvoice}
+            />
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => onViewDialogOpenChange(false)}>
+                Close
+              </Button>
+              <Button 
+                onClick={() => {
+                  onViewDialogOpenChange(false);
+                  onEditDialogOpenChange(true);
+                }}
+              >
+                Edit Booking
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={onDeleteDialogOpenChange}>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
@@ -7,8 +7,11 @@ import BookingTable from '@/components/bookings/BookingTable';
 import BookingFilter from '@/components/bookings/BookingFilter';
 import BookingDialogs from '@/components/bookings/BookingDialogs';
 import { useBookings } from '@/hooks/useBookings';
+import { Booking } from '@/integrations/supabase/client';
 
 const Bookings = () => {
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
   const {
     bookings,
     searchTerm,
@@ -36,12 +39,17 @@ const Bookings = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleEditBooking = (booking: any) => {
+  const handleViewBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteBooking = (booking: any) => {
+  const handleDeleteBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsDeleteDialogOpen(true);
   };
@@ -71,6 +79,7 @@ const Bookings = () => {
             <BookingTable 
               bookings={bookings}
               isLoading={isLoading}
+              onViewBooking={handleViewBooking}
               onEditBooking={handleEditBooking}
               onDeleteBooking={handleDeleteBooking}
             />
@@ -82,12 +91,14 @@ const Bookings = () => {
         isAddDialogOpen={isAddDialogOpen}
         isEditDialogOpen={isEditDialogOpen}
         isDeleteDialogOpen={isDeleteDialogOpen}
+        isViewDialogOpen={isViewDialogOpen}
         isLoading={isLoading}
         newBooking={newBooking}
         selectedBooking={selectedBooking}
         onAddDialogOpenChange={setIsAddDialogOpen}
         onEditDialogOpenChange={setIsEditDialogOpen}
         onDeleteDialogOpenChange={setIsDeleteDialogOpen}
+        onViewDialogOpenChange={setIsViewDialogOpen}
         onNewBookingChange={handleNewBookingChange}
         onSelectedBookingChange={handleSelectedBookingChange}
         onSubmitNewBooking={addBooking}

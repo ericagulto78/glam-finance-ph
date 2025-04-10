@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -162,43 +161,6 @@ export function useInvoices() {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Add an invoice automatically from a booking
-  const addBookingInvoice = async (booking: Booking) => {
-    if (!user) return;
-    
-    try {
-      const invoiceNumber = generateInvoiceNumber();
-      const dueDate = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0];
-      
-      const invoiceToInsert = {
-        invoice_number: invoiceNumber,
-        client: booking.client,
-        issue_date: booking.date,
-        due_date: dueDate,
-        amount: booking.amount,
-        status: 'pending' as InvoiceStatus,
-        payment_method: 'unpaid' as PaymentMethod,
-        booking_id: booking.id,
-        user_id: user.id,
-      };
-
-      const { error } = await supabase
-        .from('invoices')
-        .insert([invoiceToInsert]);
-
-      if (error) throw error;
-      
-      await fetchInvoices();
-    } catch (error: any) {
-      console.error('Error adding booking invoice:', error);
-      toast({
-        title: "Error adding invoice for booking",
-        description: error.message,
-        variant: "destructive",
-      });
     }
   };
 
@@ -389,6 +351,66 @@ export function useInvoices() {
     return matchesSearch && matchesStatus;
   });
 
+  // Add an invoice automatically from a booking
+  const addBookingInvoice = async (booking: Booking) => {
+    if (!user) return;
+    
+    try {
+      // Check if an invoice already exists for this booking
+      const { data: existingInvoice, error: checkError } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('booking_id', booking.id)
+        .maybeSingle();
+        
+      if (checkError) throw checkError;
+      
+      // If invoice already exists, don't create a new one
+      if (existingInvoice) {
+        toast({
+          title: "Invoice already exists",
+          description: "An invoice for this booking has already been created",
+        });
+        return;
+      }
+      
+      const invoiceNumber = generateInvoiceNumber();
+      const dueDate = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0];
+      
+      const invoiceToInsert = {
+        invoice_number: invoiceNumber,
+        client: booking.client,
+        issue_date: booking.date,
+        due_date: dueDate,
+        amount: booking.amount,
+        status: 'pending' as InvoiceStatus,
+        payment_method: 'unpaid' as PaymentMethod,
+        booking_id: booking.id,
+        user_id: user.id,
+      };
+
+      const { error } = await supabase
+        .from('invoices')
+        .insert([invoiceToInsert]);
+
+      if (error) throw error;
+      
+      await fetchInvoices();
+      
+      toast({
+        title: "Invoice created",
+        description: `Invoice #${invoiceNumber} has been created for the booking`,
+      });
+    } catch (error: any) {
+      console.error('Error adding booking invoice:', error);
+      toast({
+        title: "Error adding invoice for booking",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     invoices: filteredInvoices,
     searchTerm,
@@ -412,10 +434,11 @@ export function useInvoices() {
     handleNewInvoiceChange,
     handleSelectedInvoiceChange,
     addInvoice,
-    addBookingInvoice,
     updateInvoice,
     deleteInvoice,
     processInvoicePayment,
-    fetchInvoices
+    fetchInvoices,
+    generateInvoiceNumber,
+    addBookingInvoice,
   };
 }

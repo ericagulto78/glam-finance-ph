@@ -1,136 +1,80 @@
-
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Calendar, LayoutDashboard, DollarSign, FileText, Settings, PieChart, CircleUser, CreditCard, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import Logo from './Logo';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+  LayoutDashboard,
+  Calendar,
+  Receipt,
+  TrendingDown,
+  Wallet,
+  ListTodo
+} from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
-const mainNavItems = [
-  {
-    title: "Dashboard",
-    path: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Bookings",
-    path: "/bookings",
-    icon: Calendar,
-  },
-  {
-    title: "Expenses",
-    path: "/expenses",
-    icon: DollarSign,
-  },
-  {
-    title: "Invoices",
-    path: "/invoices",
-    icon: FileText,
-  },
-  {
-    title: "Taxes",
-    path: "/taxes",
-    icon: PieChart,
-  },
-  {
-    title: "Bank Accounts",
-    path: "/bank-accounts",
-    icon: CreditCard,
-  }
-];
-
-const accountNavItems = [
-  {
-    title: "Settings",
-    path: "/settings",
-    icon: Settings,
-  }
-];
-
-const AppSidebar = () => {
+const AppSidebar: React.FC = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  const menuItems = [
+    { 
+      name: 'Dashboard', 
+      path: '/', 
+      icon: <LayoutDashboard size={20} /> 
+    },
+    { 
+      name: 'Bookings', 
+      path: '/bookings', 
+      icon: <Calendar size={20} /> 
+    },
+    { 
+      name: 'Service Types', 
+      path: '/service-types', 
+      icon: <ListTodo size={20} /> 
+    },
+    { 
+      name: 'Invoices', 
+      path: '/invoices', 
+      icon: <Receipt size={20} /> 
+    },
+    { 
+      name: 'Expenses', 
+      path: '/expenses', 
+      icon: <TrendingDown size={20} /> 
+    },
+    { 
+      name: 'Bank Accounts', 
+      path: '/bank-accounts', 
+      icon: <Wallet size={20} /> 
+    },
+  ];
+
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <Logo />
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    className={location.pathname === item.path ? "bg-accent text-accent-foreground" : ""}
-                  >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon size={18} />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {accountNavItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    className={location.pathname === item.path ? "bg-accent text-accent-foreground" : ""}
-                  >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon size={18} />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="p-4 border-t">
-        <div className="flex flex-col space-y-3">
-          <div className="flex items-center gap-3">
-            <CircleUser size={24} className="text-gray-500" />
-            <div>
-              <p className="text-sm font-medium">
-                {user?.email ? user.email.split('@')[0] : 'Makeup Artist'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {user?.email || 'manager@example.com'}
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={signOut}>
-            <LogOut size={16} className="mr-2" />
-            Sign Out
-          </Button>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+    <div className="flex flex-col h-full py-4">
+      <div className="px-3 py-2 text-center">
+        <h1 className="text-lg font-semibold">Business Manager</h1>
+      </div>
+      <div className="space-y-1 mt-6">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.path}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-x-2 py-2 px-3 font-medium text-sm hover:bg-accent hover:text-accent-foreground",
+                isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground"
+              )
+            }
+          >
+            {item.icon}
+            {item.name}
+          </NavLink>
+        ))}
+      </div>
+    </div>
   );
 };
 
