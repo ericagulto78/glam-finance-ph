@@ -18,6 +18,7 @@ const Invoices = () => {
     isAddDialogOpen,
     isEditDialogOpen,
     isDeleteDialogOpen,
+    isViewDialogOpen,
     isLoading,
     setSearchTerm,
     setStatusFilter,
@@ -25,6 +26,7 @@ const Invoices = () => {
     setIsAddDialogOpen,
     setIsEditDialogOpen,
     setIsDeleteDialogOpen,
+    setIsViewDialogOpen,
     handleNewInvoiceChange,
     handleSelectedInvoiceChange,
     addInvoice,
@@ -34,6 +36,11 @@ const Invoices = () => {
 
   const handleAddInvoice = () => {
     setIsAddDialogOpen(true);
+  };
+
+  const handleViewInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setIsViewDialogOpen(true);
   };
 
   const handleEditInvoice = (invoice: any) => {
@@ -71,6 +78,7 @@ const Invoices = () => {
             <InvoiceTable 
               invoices={invoices}
               isLoading={isLoading}
+              onViewInvoice={handleViewInvoice}
               onEditInvoice={handleEditInvoice}
               onDeleteInvoice={handleDeleteInvoice}
             />
@@ -82,12 +90,14 @@ const Invoices = () => {
         isAddDialogOpen={isAddDialogOpen}
         isEditDialogOpen={isEditDialogOpen}
         isDeleteDialogOpen={isDeleteDialogOpen}
+        isViewDialogOpen={isViewDialogOpen}
         isLoading={isLoading}
         newInvoice={newInvoice}
         selectedInvoice={selectedInvoice}
         onAddDialogOpenChange={setIsAddDialogOpen}
         onEditDialogOpenChange={setIsEditDialogOpen}
         onDeleteDialogOpenChange={setIsDeleteDialogOpen}
+        onViewDialogOpenChange={setIsViewDialogOpen}
         onNewInvoiceChange={handleNewInvoiceChange}
         onSelectedInvoiceChange={handleSelectedInvoiceChange}
         onSubmitNewInvoice={addInvoice}

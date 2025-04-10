@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MoreHorizontal, User, DollarSign, Calendar } from 'lucide-react';
+import { MoreHorizontal, User, DollarSign, Calendar, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Invoice, InvoiceStatus } from '@/integrations/supabase/client';
 import {
   Table,
@@ -22,6 +22,7 @@ import {
 interface InvoiceTableProps {
   invoices: Invoice[];
   isLoading: boolean;
+  onViewInvoice: (invoice: Invoice) => void;
   onEditInvoice: (invoice: Invoice) => void;
   onDeleteInvoice: (invoice: Invoice) => void;
 }
@@ -35,6 +36,7 @@ const statusColors = {
 const InvoiceTable: React.FC<InvoiceTableProps> = ({
   invoices,
   isLoading,
+  onViewInvoice,
   onEditInvoice,
   onDeleteInvoice,
 }) => {
@@ -49,7 +51,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
             <TableHead>Due Date</TableHead>
             <TableHead className="text-right">Amount</TableHead>
             <TableHead className="text-right">Status</TableHead>
-            <TableHead className="w-[60px]"></TableHead>
+            <TableHead className="w-[80px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -103,22 +105,33 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEditInvoice(invoice)}>
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDeleteInvoice(invoice)}>
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => onViewInvoice(invoice)} title="View Invoice">
+                      <Eye size={16} />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onViewInvoice(invoice)}>
+                          <Eye size={14} className="mr-2" />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onEditInvoice(invoice)}>
+                          <Pencil size={14} className="mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDeleteInvoice(invoice)} className="text-destructive">
+                          <Trash2 size={14} className="mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

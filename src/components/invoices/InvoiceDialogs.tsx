@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Invoice } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -11,17 +11,20 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import InvoiceForm, { InvoiceFormData } from './InvoiceForm';
+import InvoiceView from './InvoiceView';
 
 interface InvoiceDialogsProps {
   isAddDialogOpen: boolean;
   isEditDialogOpen: boolean;
   isDeleteDialogOpen: boolean;
+  isViewDialogOpen: boolean;
   isLoading: boolean;
   newInvoice: InvoiceFormData;
   selectedInvoice: Invoice | null;
   onAddDialogOpenChange: (open: boolean) => void;
   onEditDialogOpenChange: (open: boolean) => void;
   onDeleteDialogOpenChange: (open: boolean) => void;
+  onViewDialogOpenChange: (open: boolean) => void;
   onNewInvoiceChange: (field: string, value: any) => void;
   onSelectedInvoiceChange: (field: string, value: any) => void;
   onSubmitNewInvoice: () => void;
@@ -33,20 +36,43 @@ export const InvoiceDialogs: React.FC<InvoiceDialogsProps> = ({
   isAddDialogOpen,
   isEditDialogOpen,
   isDeleteDialogOpen,
+  isViewDialogOpen,
   isLoading,
   newInvoice,
   selectedInvoice,
   onAddDialogOpenChange,
   onEditDialogOpenChange,
   onDeleteDialogOpenChange,
+  onViewDialogOpenChange,
   onNewInvoiceChange,
   onSelectedInvoiceChange,
   onSubmitNewInvoice,
   onUpdateInvoice,
   onConfirmDelete,
 }) => {
+  const invoiceRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
+      {/* View Invoice Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={onViewDialogOpenChange}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>View Invoice</DialogTitle>
+            <DialogDescription>
+              View invoice details and print or download.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInvoice && (
+            <InvoiceView 
+              ref={invoiceRef}
+              invoice={selectedInvoice} 
+              onClose={() => onViewDialogOpenChange(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Add Invoice Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={onAddDialogOpenChange}>
         <DialogContent className="sm:max-w-[525px]">

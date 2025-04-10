@@ -27,6 +27,7 @@ export function useInvoices() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -235,6 +236,7 @@ export function useInvoices() {
     isAddDialogOpen,
     isEditDialogOpen,
     isDeleteDialogOpen,
+    isViewDialogOpen,
     isLoading,
     setSearchTerm,
     setStatusFilter,
@@ -242,6 +244,7 @@ export function useInvoices() {
     setIsAddDialogOpen,
     setIsEditDialogOpen,
     setIsDeleteDialogOpen,
+    setIsViewDialogOpen,
     handleNewInvoiceChange,
     handleSelectedInvoiceChange,
     addInvoice,

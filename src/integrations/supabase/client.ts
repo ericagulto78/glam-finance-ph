@@ -28,6 +28,7 @@ export const isAdmin = (email: string | undefined) => {
 // Type definitions and helpers for our components
 export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
 export type InvoiceStatus = 'paid' | 'pending' | 'overdue';
+export type TransactionType = 'deposit' | 'withdrawal' | 'transfer';
 
 // Type guards to ensure status values are correctly typed
 export const isValidBookingStatus = (status: string): status is BookingStatus => {
@@ -36,6 +37,10 @@ export const isValidBookingStatus = (status: string): status is BookingStatus =>
 
 export const isValidInvoiceStatus = (status: string): status is InvoiceStatus => {
   return ['paid', 'pending', 'overdue'].includes(status);
+};
+
+export const isValidTransactionType = (type: string): status is TransactionType => {
+  return ['deposit', 'withdrawal', 'transfer'].includes(type);
 };
 
 // Helper functions to cast Supabase data to our frontend types
@@ -58,6 +63,28 @@ export const castExpenseData = (data: any): Expense => {
   return {
     ...data,
     is_monthly: data.is_monthly || false
+  };
+};
+
+export const castBankAccountData = (data: any): BankAccount => {
+  return {
+    ...data,
+    isDefault: data.is_default || false,
+    bankName: data.bank_name || '',
+    accountName: data.account_name || '',
+    accountNumber: data.account_number || '',
+    balance: data.balance || 0,
+    undeposited: data.undeposited || 0
+  };
+};
+
+export const castTransactionData = (data: any): Transaction => {
+  return {
+    ...data,
+    type: isValidTransactionType(data.type) ? data.type : 'deposit',
+    fromAccount: data.from_account || null,
+    toAccount: data.to_account || null,
+    amount: data.amount || 0
   };
 };
 
@@ -109,7 +136,22 @@ export interface BankAccount {
   accountName: string;
   accountNumber: string;
   isDefault: boolean;
-  balance?: number;
-  undeposited?: number;
+  balance: number;
+  undeposited: number;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
+export interface Transaction {
+  id: string;
+  date: string;
+  type: TransactionType;
+  description: string;
+  amount: number;
+  fromAccount: string | null;
+  toAccount: string | null;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
