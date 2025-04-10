@@ -69,10 +69,10 @@ export const castExpenseData = (data: any): Expense => {
 export const castBankAccountData = (data: any): BankAccount => {
   return {
     ...data,
-    isDefault: data.is_default || false,
     bankName: data.bank_name || '',
     accountName: data.account_name || '',
     accountNumber: data.account_number || '',
+    isDefault: data.is_default || false,
     balance: data.balance || 0,
     undeposited: data.undeposited || 0
   };

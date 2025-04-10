@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          balance: number | null
+          bank_name: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          undeposited: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          balance?: number | null
+          bank_name: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          undeposited?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          balance?: number | null
+          bank_name?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          undeposited?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           amount: number
@@ -17,6 +56,7 @@ export type Database = {
           date: string
           id: string
           location: string
+          reservation_fee: number | null
           service: string
           status: string
           time: string
@@ -30,6 +70,7 @@ export type Database = {
           date: string
           id?: string
           location: string
+          reservation_fee?: number | null
           service: string
           status: string
           time: string
@@ -43,6 +84,7 @@ export type Database = {
           date?: string
           id?: string
           location?: string
+          reservation_fee?: number | null
           service?: string
           status?: string
           time?: string
@@ -59,6 +101,7 @@ export type Database = {
           date: string
           description: string
           id: string
+          is_monthly: boolean | null
           tax_deductible: boolean
           updated_at: string
           user_id: string
@@ -70,6 +113,7 @@ export type Database = {
           date: string
           description: string
           id?: string
+          is_monthly?: boolean | null
           tax_deductible?: boolean
           updated_at?: string
           user_id: string
@@ -81,6 +125,7 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          is_monthly?: boolean | null
           tax_deductible?: boolean
           updated_at?: string
           user_id?: string

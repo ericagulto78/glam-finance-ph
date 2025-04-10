@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, BankAccount } from '@/integrations/supabase/client';
+import { supabase, BankAccount, castBankAccountData } from '@/integrations/supabase/client';
 
 export interface BankAccountFormData {
   id?: string;
@@ -42,7 +42,7 @@ export function useBankAccounts() {
     
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: rawAccounts, error } = await supabase
         .from('bank_accounts')
         .select('*')
         .order('created_at', { ascending: false });
@@ -50,15 +50,7 @@ export function useBankAccounts() {
       if (error) throw error;
       
       // Convert the data to our BankAccount type
-      const accounts: BankAccount[] = data.map(account => ({
-        id: account.id,
-        bankName: account.bank_name,
-        accountName: account.account_name,
-        accountNumber: account.account_number,
-        isDefault: account.is_default,
-        balance: account.balance,
-        undeposited: account.undeposited
-      }));
+      const accounts: BankAccount[] = rawAccounts ? rawAccounts.map(account => castBankAccountData(account)) : [];
       
       setBankAccounts(accounts);
       
