@@ -93,24 +93,6 @@ const Invoices = () => {
     }
   };
 
-  const fetchBankAccounts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bank_accounts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBankAccounts(data as BankAccount[]);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching bank accounts",
-        description: error.message || "An error occurred while fetching bank accounts",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleCreateInvoice = async (invoiceData: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
@@ -214,7 +196,7 @@ const Invoices = () => {
             status: 'paid' as InvoiceStatus, 
             payment_method: paymentMethod, 
             bank_account_id: bankAccountId 
-          } : invoice
+          } as Invoice : invoice
         )
       );
 
@@ -237,7 +219,7 @@ const Invoices = () => {
               status: 'pending', 
               payment_method: 'unpaid', 
               bank_account_id: null 
-            } : invoice
+            } as Invoice : invoice
           )
         );
         throw error;
