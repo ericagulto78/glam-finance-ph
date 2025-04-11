@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Clock, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, type Booking, castBookingData } from '@/integrations/supabase/client';
+import { supabase, type Booking, castBooking } from '@/integrations/supabase/client';
 
 // Define the status types and colors
 const statusColors = {
@@ -37,7 +37,7 @@ const BookingsList: React.FC = () => {
         if (error) throw error;
         
         // Cast the data to ensure it matches our Booking type
-        const typedBookings = data?.map(booking => castBookingData(booking)) || [];
+        const typedBookings = data?.map(booking => castBooking(booking)) || [];
         setUpcomingBookings(typedBookings);
       } catch (error) {
         console.error('Error fetching upcoming bookings:', error);

@@ -5,49 +5,54 @@ import {
   supabase, 
   Invoice, 
   InvoiceStatus,
-  Booking,
   PaymentMethod,
-  castInvoiceData 
+  Booking,
+  castInvoice 
 } from '@/integrations/supabase/client';
 
 export interface InvoiceFormData {
   id?: string;
   invoice_number: string;
   client: string;
+  email: string;
   issue_date: string;
   due_date: string;
   amount: number;
   status: InvoiceStatus;
   payment_method: PaymentMethod;
-  bank_account_id?: string | null;
-  booking_id?: string | null;
+  bank_account_id: string | null;
+  booking_id: string | null;
+  notes: string;
+  description?: string;
 }
 
 export function useInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isProcessPaymentDialogOpen, setIsProcessPaymentDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // Initial invoice form state
   const initialInvoiceState: InvoiceFormData = {
     invoice_number: '',
     client: '',
+    email: '',
     issue_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+    due_date: new Date().toISOString().split('T')[0],
     amount: 0,
-    status: 'pending',
+    status: 'draft',
     payment_method: 'unpaid',
     bank_account_id: null,
-    booking_id: null
+    booking_id: null,
+    notes: '',
+    description: ''
   };
   
   const [newInvoice, setNewInvoice] = useState<InvoiceFormData>(initialInvoiceState);
@@ -66,7 +71,7 @@ export function useInvoices() {
       if (error) throw error;
       
       // Cast the data to ensure it matches our Invoice type
-      const typedInvoices = data?.map(invoice => castInvoiceData(invoice)) || [];
+      const typedInvoices = data?.map(invoice => castInvoice(invoice)) || [];
       setInvoices(typedInvoices);
     } catch (error: any) {
       console.error('Error fetching invoices:', error);
@@ -83,32 +88,6 @@ export function useInvoices() {
   useEffect(() => {
     fetchInvoices();
   }, [user]);
-
-  // Generate a new invoice number based on existing invoices
-  const generateInvoiceNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const baseNumber = `INV-${year}${month}-`;
-    
-    if (invoices.length === 0) {
-      return `${baseNumber}001`;
-    }
-    
-    // Find the highest existing invoice number with the same prefix
-    const existingNumbers = invoices
-      .filter(inv => inv.invoice_number.startsWith(baseNumber))
-      .map(inv => {
-        const suffix = inv.invoice_number.slice(baseNumber.length);
-        return parseInt(suffix, 10);
-      })
-      .filter(num => !isNaN(num));
-    
-    const highestNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
-    const nextNumber = (highestNumber + 1).toString().padStart(3, '0');
-    
-    return `${baseNumber}${nextNumber}`;
-  };
 
   // Add a new invoice
   const addInvoice = async () => {
@@ -128,6 +107,7 @@ export function useInvoices() {
       const invoiceToInsert = {
         invoice_number: newInvoice.invoice_number,
         client: newInvoice.client,
+        email: newInvoice.email,
         issue_date: newInvoice.issue_date,
         due_date: newInvoice.due_date,
         amount: newInvoice.amount,
@@ -135,6 +115,8 @@ export function useInvoices() {
         payment_method: newInvoice.payment_method,
         bank_account_id: newInvoice.bank_account_id,
         booking_id: newInvoice.booking_id,
+        notes: newInvoice.notes,
+        description: newInvoice.description,
         user_id: user.id,
       };
 
@@ -146,7 +128,9 @@ export function useInvoices() {
       if (error) throw error;
       
       setIsAddDialogOpen(false);
-      fetchInvoices();
+      // Immediately fetch invoices after adding
+      await fetchInvoices();
+      
       setNewInvoice(initialInvoiceState);
       toast({
         title: "Invoice added",
@@ -175,19 +159,24 @@ export function useInvoices() {
         .update({
           invoice_number: selectedInvoice.invoice_number,
           client: selectedInvoice.client,
+          email: selectedInvoice.email,
           issue_date: selectedInvoice.issue_date,
           due_date: selectedInvoice.due_date,
           amount: selectedInvoice.amount,
           status: selectedInvoice.status,
           payment_method: selectedInvoice.payment_method,
           bank_account_id: selectedInvoice.bank_account_id,
+          booking_id: selectedInvoice.booking_id,
+          notes: selectedInvoice.notes,
+          description: selectedInvoice.description
         })
         .eq('id', selectedInvoice.id);
 
       if (error) throw error;
       
       setIsEditDialogOpen(false);
-      fetchInvoices();
+      // Immediately fetch invoices after updating
+      await fetchInvoices();
       toast({
         title: "Invoice updated",
         description: "The invoice has been successfully updated",
@@ -196,113 +185,6 @@ export function useInvoices() {
       console.error('Error updating invoice:', error);
       toast({
         title: "Error updating invoice",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Process payment for an invoice
-  const processInvoicePayment = async (paymentMethod: PaymentMethod, bankAccountId?: string) => {
-    if (!selectedInvoice || !user) return;
-    
-    setIsLoading(true);
-    try {
-      // Update the invoice with payment information
-      const { error } = await supabase
-        .from('invoices')
-        .update({
-          status: 'paid',
-          payment_method: paymentMethod,
-          bank_account_id: bankAccountId || null,
-        })
-        .eq('id', selectedInvoice.id);
-
-      if (error) throw error;
-      
-      // If this was a cash payment, we need to update the undeposited funds
-      if (paymentMethod === 'cash') {
-        // Update the undeposited amount in the first default bank account or create one
-        const { data: bankAccounts } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .eq('is_default', true)
-          .limit(1);
-        
-        if (bankAccounts && bankAccounts.length > 0) {
-          // Update the undeposited funds in the default account
-          await supabase
-            .from('bank_accounts')
-            .update({
-              undeposited: (bankAccounts[0].undeposited || 0) + selectedInvoice.amount
-            })
-            .eq('id', bankAccounts[0].id);
-        } else {
-          // Fetch any bank account
-          const { data: anyBankAccount } = await supabase
-            .from('bank_accounts')
-            .select('*')
-            .limit(1);
-            
-          if (anyBankAccount && anyBankAccount.length > 0) {
-            // Update the undeposited funds in the first available account
-            await supabase
-              .from('bank_accounts')
-              .update({
-                undeposited: (anyBankAccount[0].undeposited || 0) + selectedInvoice.amount
-              })
-              .eq('id', anyBankAccount[0].id);
-          }
-        }
-        
-        // Create a transaction for the cash payment
-        await supabase
-          .from('transactions')
-          .insert([{
-            date: new Date().toISOString().split('T')[0],
-            type: 'deposit',
-            description: `Cash payment for invoice ${selectedInvoice.invoice_number}`,
-            amount: selectedInvoice.amount,
-            fromAccount: null,
-            toAccount: null, // Cash payment
-            user_id: user.id,
-          }]);
-      }
-      
-      // If this was a bank payment, we need to update the bank account balance
-      if (paymentMethod === 'bank' && bankAccountId) {
-        // Update the bank account balance using the RPC function
-        await supabase.rpc('increment_balance', {
-          row_id: bankAccountId,
-          amount_to_add: selectedInvoice.amount
-        });
-            
-        // Create a transaction for the bank deposit
-        await supabase
-          .from('transactions')
-          .insert([{
-            date: new Date().toISOString().split('T')[0],
-            type: 'deposit',
-            description: `Bank deposit for invoice ${selectedInvoice.invoice_number}`,
-            amount: selectedInvoice.amount,
-            fromAccount: null,
-            toAccount: bankAccountId,
-            user_id: user.id,
-          }]);
-      }
-      
-      setIsProcessPaymentDialogOpen(false);
-      await fetchInvoices();
-      toast({
-        title: "Payment processed",
-        description: "The invoice has been marked as paid",
-      });
-    } catch (error: any) {
-      console.error('Error processing invoice payment:', error);
-      toast({
-        title: "Error processing payment",
         description: error.message,
         variant: "destructive",
       });
@@ -325,10 +207,11 @@ export function useInvoices() {
       if (error) throw error;
       
       setIsDeleteDialogOpen(false);
-      fetchInvoices();
+      // Immediately fetch invoices after deleting
+      await fetchInvoices();
       toast({
         title: "Invoice deleted",
-        description: `Invoice #${selectedInvoice.invoice_number} has been deleted.`,
+        description: `Invoice for ${selectedInvoice.client} has been deleted.`,
       });
     } catch (error: any) {
       console.error('Error deleting invoice:', error);
@@ -366,48 +249,32 @@ export function useInvoices() {
   // Filter invoices based on search term and status
   const filteredInvoices = invoices.filter(invoice => {
     const matchesSearch = invoice.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase());
+                         invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  // Add an invoice automatically from a booking
+  // Create an invoice for a booking
   const addBookingInvoice = async (booking: Booking) => {
     if (!user) return;
     
+    setIsLoading(true);
     try {
-      // Check if an invoice already exists for this booking
-      const { data: existingInvoice, error: checkError } = await supabase
-        .from('invoices')
-        .select('id')
-        .eq('booking_id', booking.id)
-        .maybeSingle();
-        
-      if (checkError) throw checkError;
-      
-      // If invoice already exists, don't create a new one
-      if (existingInvoice) {
-        toast({
-          title: "Invoice already exists",
-          description: "An invoice for this booking has already been created",
-        });
-        return;
-      }
-      
-      const invoiceNumber = generateInvoiceNumber();
-      const dueDate = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0];
-      
       const invoiceToInsert = {
-        invoice_number: invoiceNumber,
+        invoice_number: `INV-${Date.now()}`,
         client: booking.client,
-        issue_date: booking.date,
-        due_date: dueDate,
+        email: '',
+        issue_date: new Date().toISOString().split('T')[0],
+        due_date: new Date().toISOString().split('T')[0],
         amount: booking.amount,
-        status: 'pending' as InvoiceStatus,
-        payment_method: 'unpaid' as PaymentMethod,
+        status: 'pending',
+        payment_method: 'unpaid',
+        bank_account_id: null,
         booking_id: booking.id,
+        notes: `Invoice for ${booking.service} service on ${booking.date} at ${booking.time}`,
+        description: booking.service,
         user_id: user.id,
       };
 
@@ -417,19 +284,78 @@ export function useInvoices() {
 
       if (error) throw error;
       
+      // Immediately fetch invoices after adding
       await fetchInvoices();
-      
       toast({
         title: "Invoice created",
-        description: `Invoice #${invoiceNumber} has been created for the booking`,
+        description: `Invoice created for booking ${booking.id}`,
       });
     } catch (error: any) {
-      console.error('Error adding booking invoice:', error);
+      console.error('Error creating invoice:', error);
       toast({
-        title: "Error adding invoice for booking",
+        title: "Error creating invoice",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Record a payment for an invoice and update bank account balance
+  const recordPayment = async (invoiceId: string, paymentMethod: PaymentMethod, bankAccountId?: string) => {
+    setIsLoading(true);
+    try {
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .single();
+        
+      if (invoiceError) throw invoiceError;
+
+      // Update the invoice status and payment method
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({ 
+          status: 'paid', 
+          payment_method: paymentMethod,
+          bank_account_id: paymentMethod === 'bank' ? bankAccountId : null
+        })
+        .eq('id', invoiceId);
+        
+      if (updateError) throw updateError;
+
+      // If paid to a bank account, update the balance
+      if (paymentMethod === 'bank' && bankAccountId) {
+        const { error: balanceError } = await supabase
+          .rpc('increment_balance', { 
+            row_id: bankAccountId, 
+            amount_to_add: invoice.amount 
+          });
+          
+        if (balanceError) throw balanceError;
+      }
+      
+      // Fetch the updated invoices
+      await fetchInvoices();
+      
+      toast({
+        title: "Payment recorded",
+        description: `Payment of ₱${invoice.amount.toLocaleString()} has been recorded`,
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error recording payment:', error);
+      toast({
+        title: "Error recording payment",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -442,8 +368,7 @@ export function useInvoices() {
     isAddDialogOpen,
     isEditDialogOpen,
     isDeleteDialogOpen,
-    isViewDialogOpen,
-    isProcessPaymentDialogOpen,
+    isPaymentDialogOpen,
     isLoading,
     setSearchTerm,
     setStatusFilter,
@@ -451,16 +376,14 @@ export function useInvoices() {
     setIsAddDialogOpen,
     setIsEditDialogOpen,
     setIsDeleteDialogOpen,
-    setIsViewDialogOpen,
-    setIsProcessPaymentDialogOpen,
+    setIsPaymentDialogOpen,
     handleNewInvoiceChange,
     handleSelectedInvoiceChange,
     addInvoice,
     updateInvoice,
     deleteInvoice,
-    processInvoicePayment,
-    fetchInvoices,
-    generateInvoiceNumber,
     addBookingInvoice,
+    recordPayment,
+    fetchInvoices
   };
 }

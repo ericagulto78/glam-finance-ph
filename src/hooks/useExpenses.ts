@@ -1,33 +1,54 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, type Expense, castExpenseData } from '@/integrations/supabase/client';
+import { 
+  supabase, 
+  Expense, 
+  ExpenseCategory,
+  castExpense 
+} from '@/integrations/supabase/client';
 
-export const useExpenses = () => {
+export interface ExpenseFormData {
+  id?: string;
+  name: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;
+  tax_deductible: boolean;
+  is_monthly: boolean;
+  description: string;
+}
+
+export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [selectedExpense, setSelectedExpense] = useState<Partial<Expense>>({
+    name: '',
+    amount: 0,
+    category: 'other',
+    date: new Date().toISOString().split('T')[0],
+    tax_deductible: false,
+    is_monthly: false,
+    description: ''
+  });
+  const [newExpense, setNewExpense] = useState<Partial<Expense>>({
+    name: '',
+    amount: 0,
+    category: 'other',
+    date: new Date().toISOString().split('T')[0],
+    tax_deductible: false,
+    is_monthly: false,
+    description: ''
+  });
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [taxFilter, setTaxFilter] = useState('all');
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // New expense form state
-  const [newExpense, setNewExpense] = useState<Partial<Expense>>({
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-    category: 'supplies', // Fixed: lowercase 'supplies' instead of 'Supplies'
-    amount: 0,
-    tax_deductible: true,
-    is_monthly: false,
-  });
-
-  // Fetch expenses from Supabase
+  // Fetch expenses
   const fetchExpenses = async () => {
     if (!user) return;
     
@@ -41,7 +62,7 @@ export const useExpenses = () => {
       if (error) throw error;
       
       // Cast the data to ensure it matches our Expense type
-      const typedExpenses = data?.map(expense => castExpenseData(expense)) || [];
+      const typedExpenses = data?.map(expense => castExpense(expense)) || [];
       setExpenses(typedExpenses);
     } catch (error: any) {
       console.error('Error fetching expenses:', error);
@@ -59,29 +80,11 @@ export const useExpenses = () => {
     fetchExpenses();
   }, [user]);
 
-  const handleNewExpenseChange = (field: string, value: any) => {
-    setNewExpense((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSelectedExpenseChange = (field: string, value: any) => {
-    if (!selectedExpense) return;
-    
-    setSelectedExpense((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [field]: value,
-      };
-    });
-  };
-
+  // Add a new expense
   const addExpense = async () => {
     if (!user) return;
     
-    if (!newExpense.description || !newExpense.category || !newExpense.date) {
+    if (!newExpense.name || !newExpense.category || !newExpense.date) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
@@ -93,15 +96,16 @@ export const useExpenses = () => {
     setIsLoading(true);
     try {
       const expenseToInsert = {
-        date: newExpense.date || '',
-        description: newExpense.description || '',
-        category: newExpense.category || '',
+        name: newExpense.name,
         amount: newExpense.amount || 0,
-        tax_deductible: newExpense.tax_deductible ?? true,
-        is_monthly: newExpense.is_monthly ?? false,
-        user_id: user.id
+        category: newExpense.category,
+        date: newExpense.date,
+        tax_deductible: newExpense.tax_deductible || false,
+        is_monthly: newExpense.is_monthly || false,
+        description: newExpense.description || '',
+        user_id: user.id,
       };
-      
+
       const { data, error } = await supabase
         .from('expenses')
         .insert([expenseToInsert])
@@ -110,7 +114,18 @@ export const useExpenses = () => {
       if (error) throw error;
       
       setIsAddDialogOpen(false);
+      // Immediately fetch expenses after adding
       await fetchExpenses();
+      
+      setNewExpense({
+        name: '',
+        amount: 0,
+        category: 'other',
+        date: new Date().toISOString().split('T')[0],
+        tax_deductible: false,
+        is_monthly: false,
+        description: ''
+      });
       toast({
         title: "Expense added",
         description: "The expense has been successfully added",
@@ -127,6 +142,7 @@ export const useExpenses = () => {
     }
   };
 
+  // Update an existing expense
   const updateExpense = async () => {
     if (!selectedExpense || !user) return;
     
@@ -135,18 +151,20 @@ export const useExpenses = () => {
       const { error } = await supabase
         .from('expenses')
         .update({
-          date: selectedExpense.date,
-          description: selectedExpense.description,
+          name: selectedExpense.name,
+          amount: selectedExpense.amount || 0,
           category: selectedExpense.category,
-          amount: selectedExpense.amount,
-          tax_deductible: selectedExpense.tax_deductible,
-          is_monthly: selectedExpense.is_monthly,
+          date: selectedExpense.date,
+          tax_deductible: selectedExpense.tax_deductible || false,
+          is_monthly: selectedExpense.is_monthly || false,
+          description: selectedExpense.description || ''
         })
         .eq('id', selectedExpense.id);
 
       if (error) throw error;
       
       setIsEditDialogOpen(false);
+      // Immediately fetch expenses after updating
       await fetchExpenses();
       toast({
         title: "Expense updated",
@@ -164,6 +182,7 @@ export const useExpenses = () => {
     }
   };
 
+  // Delete an expense
   const deleteExpense = async () => {
     if (!selectedExpense || !user) return;
     
@@ -177,10 +196,11 @@ export const useExpenses = () => {
       if (error) throw error;
       
       setIsDeleteDialogOpen(false);
+      // Immediately fetch expenses after deleting
       await fetchExpenses();
       toast({
         title: "Expense deleted",
-        description: `Expense "${selectedExpense.description}" has been deleted.`,
+        description: `Expense ${selectedExpense.name} has been deleted.`,
       });
     } catch (error: any) {
       console.error('Error deleting expense:', error);
@@ -194,24 +214,35 @@ export const useExpenses = () => {
     }
   };
 
+  // Handle form input changes for new expense
+  const handleNewExpenseChange = (field: string, value: any) => {
+    setNewExpense((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handle form input changes for edit expense
+  const handleSelectedExpenseChange = (field: string, value: any) => {
+    setSelectedExpense((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Filter expenses based on search term and category
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
     
-    const matchesTaxStatus = taxFilter === 'all' || 
-                           (taxFilter === 'deductible' && expense.tax_deductible) || 
-                           (taxFilter === 'nondeductible' && !expense.tax_deductible);
-    
-    return matchesSearch && matchesCategory && matchesTaxStatus;
+    return matchesSearch && matchesCategory;
   });
 
   return {
     expenses: filteredExpenses,
     searchTerm,
     categoryFilter,
-    taxFilter,
     newExpense,
     selectedExpense,
     isAddDialogOpen,
@@ -220,8 +251,6 @@ export const useExpenses = () => {
     isLoading,
     setSearchTerm,
     setCategoryFilter,
-    setTaxFilter,
-    setNewExpense,
     setSelectedExpense,
     setIsAddDialogOpen,
     setIsEditDialogOpen,
@@ -230,7 +259,6 @@ export const useExpenses = () => {
     handleSelectedExpenseChange,
     addExpense,
     updateExpense,
-    deleteExpense,
-    fetchExpenses
+    deleteExpense
   };
-};
+}

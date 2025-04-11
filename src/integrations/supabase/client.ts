@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Use import.meta.env instead of process.env for Vite applications
@@ -6,396 +7,6 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1N
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 export const ADMIN_EMAIL = 'admin@example.com';
-
-// Supabase types
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
-export interface Database {
-  public: {
-    Tables: {
-      bank_accounts: {
-        Row: {
-          account_name: string | null
-          account_number: string | null
-          balance: number | null
-          bank_name: string | null
-          created_at: string
-          id: string
-          is_default: boolean | null
-          name: string | null
-          type: string | null
-          undeposited: number | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          account_name?: string | null
-          account_number?: string | null
-          balance?: number | null
-          bank_name?: string | null
-          created_at?: string
-          id?: string
-          is_default?: boolean | null
-          name?: string | null
-          type?: string | null
-          undeposited?: number | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          account_name?: string | null
-          account_number?: string | null
-          balance?: number | null
-          bank_name?: string | null
-          created_at?: string
-          id?: string
-          is_default?: boolean | null
-          name?: string | null
-          type?: string | null
-          undeposited?: number | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bank_accounts_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      bookings: {
-        Row: {
-          amount: number | null
-          client: string | null
-          created_at: string
-          date: string | null
-          id: string
-          location: string | null
-          reservation_fee: number | null
-          service: string | null
-          service_details: string | null
-          status: string | null
-          time: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          client?: string | null
-          created_at?: string
-          date?: string | null
-          id?: string
-          location?: string | null
-          reservation_fee?: number | null
-          service?: string | null
-          service_details?: string | null
-          status?: string | null
-          time?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          client?: string | null
-          created_at?: string
-          date?: string | null
-          id?: string
-          location?: string | null
-          reservation_fee?: number | null
-          service?: string | null
-          service_details?: string | null
-          status?: string | null
-          time?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      expenses: {
-        Row: {
-          amount: number | null
-          category: string | null
-          created_at: string
-          date: string | null
-          id: string
-          is_monthly: boolean | null
-          name: string | null
-          tax_deductible: boolean | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          category?: string | null
-          created_at?: string
-          date?: string | null
-          id?: string
-          is_monthly?: boolean | null
-          name?: string | null
-          tax_deductible?: boolean | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          category?: string | null
-          created_at?: string
-          date?: string | null
-          id?: string
-          is_monthly?: boolean | null
-          name?: string | null
-          tax_deductible?: boolean | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expenses_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      invoices: {
-        Row: {
-          amount: number | null
-          bank_account_id: string | null
-          booking_id: string | null
-          client: string | null
-          created_at: string
-          due_date: string | null
-          email: string | null
-          id: string
-          invoice_number: string | null
-          issue_date: string | null
-          notes: string | null
-          payment_method: string | null
-          status: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          bank_account_id?: string | null
-          booking_id?: string | null
-          client?: string | null
-          created_at?: string
-          due_date?: string | null
-          email?: string | null
-          id?: string
-          invoice_number?: string | null
-          issue_date?: string | null
-          notes?: string | null
-          payment_method?: string | null
-          status?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account_id?: string | null
-          booking_id?: string | null
-          client?: string | null
-          created_at?: string
-          due_date?: string | null
-          email?: string | null
-          id?: string
-          invoice_number?: string | null
-          issue_date?: string | null
-          notes?: string | null
-          payment_method?: string | null
-          status?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_booking_id_fkey"
-            columns: ["booking_id"]
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      service_types: {
-        Row: {
-          created_at: string
-          description: string | null
-          duration: number | null
-          id: string
-          name: string | null
-          price: number | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          duration?: number | null
-          id?: string
-          name?: string | null
-          price?: number | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          duration?: number | null
-          id?: string
-          name?: string | null
-          price?: number | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_types_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      transactions: {
-        Row: {
-          amount: number | null
-          bank_account_id: string | null
-          created_at: string
-          date: string | null
-          description: string | null
-          id: string
-          type: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          bank_account_id?: string | null
-          created_at?: string
-          date?: string | null
-          description?: string | null
-          id?: string
-          type?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account_id?: string | null
-          created_at?: string
-          date?: string | null
-          description?: string | null
-          id?: string
-          type?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      user_profiles: {
-        Row: {
-          approved: boolean | null
-          created_at: string
-          id: string
-          rejection_reason: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          approved?: boolean | null
-          created_at?: string
-          id?: string
-          rejection_reason?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          approved?: boolean | null
-          created_at?: string
-          id?: string
-          rejection_reason?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_profiles_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      decrement_balance: {
-        Args: {
-          row_id: string
-          amount_to_subtract: number
-        }
-        Returns: undefined
-      }
-      increment_balance: {
-        Args: {
-          row_id: string
-          amount_to_add: number
-        }
-        Returns: undefined
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
 
 // Create TypeScript types for our database tables
 export interface BankAccount {
@@ -474,6 +85,7 @@ export interface Expense {
   date: string;
   tax_deductible: boolean;
   is_monthly: boolean;
+  description: string; // Added description field
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -488,13 +100,14 @@ export const castExpense = (data: any): Expense => ({
   date: data.date,
   tax_deductible: data.tax_deductible || false,
   is_monthly: data.is_monthly || false,
+  description: data.description || '',
   created_at: data.created_at,
   updated_at: data.updated_at,
   user_id: data.user_id
 });
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
-export type PaymentMethod = 'card' | 'cash' | 'bank_transfer' | 'check' | 'unpaid';
+export type PaymentMethod = 'card' | 'cash' | 'bank_transfer' | 'check' | 'unpaid' | 'bank';
 
 export interface Invoice {
   id: string;
@@ -509,6 +122,7 @@ export interface Invoice {
   bank_account_id: string | null;
   booking_id: string | null;
   notes: string;
+  description?: string; // Added optional description field
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -528,6 +142,7 @@ export const castInvoice = (data: any): Invoice => ({
   bank_account_id: data.bank_account_id,
   booking_id: data.booking_id,
   notes: data.notes || '',
+  description: data.description || '',
   created_at: data.created_at,
   updated_at: data.updated_at,
   user_id: data.user_id
@@ -556,11 +171,13 @@ export const castServiceType = (data: any): ServiceType => ({
   user_id: data.user_id
 });
 
+export type TransactionType = 'deposit' | 'withdrawal';
+
 export interface Transaction {
   id: string;
   bank_account_id: string;
   amount: number;
-  type: 'deposit' | 'withdrawal';
+  type: TransactionType;
   description: string;
   date: string;
   created_at: string;
@@ -573,7 +190,7 @@ export const castTransaction = (data: any): Transaction => ({
   id: data.id,
   bank_account_id: data.bank_account_id,
   amount: data.amount || 0,
-  type: data.type as 'deposit' | 'withdrawal',
+  type: data.type as TransactionType,
   description: data.description || '',
   date: data.date,
   created_at: data.created_at,

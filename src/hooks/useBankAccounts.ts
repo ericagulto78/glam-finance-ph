@@ -1,40 +1,36 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, BankAccount, castBankAccountData } from '@/integrations/supabase/client';
-
-export interface BankAccountFormData {
-  id?: string;
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-  isDefault: boolean;
-  balance: number;
-  undeposited: number;
-}
+import { 
+  supabase, 
+  BankAccount,
+  castBankAccount 
+} from '@/integrations/supabase/client';
 
 export function useBankAccounts() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState<BankAccount | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const [totalStats, setTotalStats] = useState({
-    totalBalance: 0,
-    totalUndeposited: 0,
-    totalCashOnHand: 0
-  });
-
-  const initialAccountState: BankAccountFormData = {
-    bankName: '',
-    accountName: '',
-    accountNumber: '',
-    isDefault: false,
+  
+  // Initial bank account form state
+  const initialAccountState: Omit<BankAccount, 'id' | 'created_at' | 'updated_at' | 'user_id'> = {
+    name: '',
+    type: 'checking',
     balance: 0,
-    undeposited: 0
+    is_default: false,
+    undeposited: 0,
+    bank_name: '',
+    account_name: '',
+    account_number: ''
   };
+  
+  const [newAccount, setNewAccount] = useState<Omit<BankAccount, 'id' | 'created_at' | 'updated_at' | 'user_id'>>(initialAccountState);
 
   // Fetch bank accounts
   const fetchBankAccounts = async () => {
@@ -42,30 +38,16 @@ export function useBankAccounts() {
     
     setIsLoading(true);
     try {
-      // Use the typed-safe version with any to bypass TypeScript limitations
-      // until the types get updated
-      const { data: rawAccounts, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('bank_accounts')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name', { ascending: true });
 
       if (error) throw error;
       
-      // Convert the data to our BankAccount type
-      const accounts: BankAccount[] = rawAccounts ? rawAccounts.map((account: any) => castBankAccountData(account)) : [];
-      
-      setBankAccounts(accounts);
-      
-      // Calculate totals
-      const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
-      const totalUndeposited = accounts.reduce((sum, account) => sum + account.undeposited, 0);
-      const totalCashOnHand = totalBalance + totalUndeposited;
-      
-      setTotalStats({
-        totalBalance,
-        totalUndeposited,
-        totalCashOnHand
-      });
+      // Cast the data to ensure it matches our BankAccount type
+      const typedAccounts = data?.map(account => castBankAccount(account)) || [];
+      setBankAccounts(typedAccounts);
     } catch (error: any) {
       console.error('Error fetching bank accounts:', error);
       toast({
@@ -82,41 +64,49 @@ export function useBankAccounts() {
     fetchBankAccounts();
   }, [user]);
 
-  const addBankAccount = async (formData: BankAccountFormData) => {
+  // Add a new bank account
+  const addBankAccount = async () => {
     if (!user) return;
     
+    if (!newAccount.name || !newAccount.type || !newAccount.bank_name || !newAccount.account_name || !newAccount.account_number) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // If this is the default account, update all other accounts to not be default
-      if (formData.isDefault) {
-        await (supabase as any)
-          .from('bank_accounts')
-          .update({ is_default: false })
-          .eq('user_id', user.id);
-      }
-      
-      // Insert the new account
-      const { data, error } = await (supabase as any)
+      const accountToInsert = {
+        name: newAccount.name,
+        type: newAccount.type,
+        balance: newAccount.balance || 0,
+        is_default: newAccount.is_default || false,
+        undeposited: newAccount.undeposited || 0,
+        bank_name: newAccount.bank_name,
+        account_name: newAccount.account_name,
+        account_number: newAccount.account_number,
+        user_id: user.id,
+      };
+
+      const { data, error } = await supabase
         .from('bank_accounts')
-        .insert([{
-          user_id: user.id,
-          bank_name: formData.bankName,
-          account_name: formData.accountName,
-          account_number: formData.accountNumber,
-          is_default: formData.isDefault,
-          balance: formData.balance,
-          undeposited: formData.undeposited
-        }])
+        .insert([accountToInsert])
         .select();
 
       if (error) throw error;
       
-      toast({
-        title: "Account added",
-        description: "New bank account has been added successfully.",
-      });
-      
+      setIsAddDialogOpen(false);
+      // Immediately fetch bank accounts after adding
       await fetchBankAccounts();
+      
+      setNewAccount(initialAccountState);
+      toast({
+        title: "Bank account added",
+        description: "The bank account has been successfully added",
+      });
     } catch (error: any) {
       console.error('Error adding bank account:', error);
       toast({
@@ -129,41 +119,35 @@ export function useBankAccounts() {
     }
   };
 
-  const updateBankAccount = async (id: string, formData: BankAccountFormData) => {
-    if (!user) return;
+  // Update an existing bank account
+  const updateBankAccount = async () => {
+    if (!selectedAccount || !user) return;
     
     setIsLoading(true);
     try {
-      // If this is the default account, update all other accounts to not be default
-      if (formData.isDefault) {
-        await (supabase as any)
-          .from('bank_accounts')
-          .update({ is_default: false })
-          .neq('id', id)
-          .eq('user_id', user.id);
-      }
-      
-      // Update the account
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('bank_accounts')
         .update({
-          bank_name: formData.bankName,
-          account_name: formData.accountName,
-          account_number: formData.accountNumber,
-          is_default: formData.isDefault,
-          balance: formData.balance,
-          undeposited: formData.undeposited
+          name: selectedAccount.name,
+          type: selectedAccount.type,
+          balance: selectedAccount.balance,
+          is_default: selectedAccount.is_default,
+          undeposited: selectedAccount.undeposited,
+          bank_name: selectedAccount.bank_name,
+          account_name: selectedAccount.account_name,
+          account_number: selectedAccount.account_number
         })
-        .eq('id', id);
+        .eq('id', selectedAccount.id);
 
       if (error) throw error;
       
-      toast({
-        title: "Account updated",
-        description: "Bank account details have been updated successfully.",
-      });
-      
+      setIsEditDialogOpen(false);
+      // Immediately fetch bank accounts after updating
       await fetchBankAccounts();
+      toast({
+        title: "Bank account updated",
+        description: "The bank account has been successfully updated",
+      });
     } catch (error: any) {
       console.error('Error updating bank account:', error);
       toast({
@@ -176,24 +160,26 @@ export function useBankAccounts() {
     }
   };
 
-  const deleteBankAccount = async (id: string) => {
-    if (!user) return;
+  // Delete a bank account
+  const deleteBankAccount = async () => {
+    if (!selectedAccount || !user) return;
     
     setIsLoading(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('bank_accounts')
         .delete()
-        .eq('id', id);
+        .eq('id', selectedAccount.id);
 
       if (error) throw error;
       
-      toast({
-        title: "Account deleted",
-        description: "Bank account has been removed successfully.",
-      });
-      
+      setIsDeleteDialogOpen(false);
+      // Immediately fetch bank accounts after deleting
       await fetchBankAccounts();
+      toast({
+        title: "Bank account deleted",
+        description: `Bank account ${selectedAccount.name} has been deleted.`,
+      });
     } catch (error: any) {
       console.error('Error deleting bank account:', error);
       toast({
@@ -206,56 +192,54 @@ export function useBankAccounts() {
     }
   };
 
-  const setAccountDefault = async (id: string) => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      // Set all accounts to not default
-      await (supabase as any)
-        .from('bank_accounts')
-        .update({ is_default: false })
-        .eq('user_id', user.id);
-      
-      // Set this account to default
-      const { error } = await (supabase as any)
-        .from('bank_accounts')
-        .update({ is_default: true })
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Default account updated",
-        description: "Your default bank account has been updated.",
-      });
-      
-      await fetchBankAccounts();
-    } catch (error: any) {
-      console.error('Error setting default bank account:', error);
-      toast({
-        title: "Error updating default account",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // Handle form input changes for new account
+  const handleNewAccountChange = (field: string, value: any) => {
+    setNewAccount((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
+  // Handle form input changes for edit account
+  const handleSelectedAccountChange = (field: string, value: any) => {
+    if (!selectedAccount) return;
+    
+    setSelectedAccount((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [field]: value,
+      };
+    });
+  };
+
+  // Filter bank accounts based on search term
+  const filteredAccounts = bankAccounts.filter(account => {
+    const matchesSearch = account.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         account.bank_name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
+  });
+
   return {
-    bankAccounts,
+    bankAccounts: filteredAccounts,
+    searchTerm,
+    newAccount,
+    selectedAccount,
+    isAddDialogOpen,
+    isEditDialogOpen,
+    isDeleteDialogOpen,
     isLoading,
-    isEditing,
-    currentAccount,
-    totalStats,
-    initialAccountState,
-    setIsEditing,
-    setCurrentAccount,
-    fetchBankAccounts,
+    setSearchTerm,
+    setSelectedAccount,
+    setIsAddDialogOpen,
+    setIsEditDialogOpen,
+    setIsDeleteDialogOpen,
+    handleNewAccountChange,
+    handleSelectedAccountChange,
     addBankAccount,
     updateBankAccount,
     deleteBankAccount,
-    setAccountDefault
+    fetchBankAccounts
   };
 }

@@ -7,7 +7,7 @@ import {
   supabase, 
   Booking, 
   BookingStatus,
-  castBookingData 
+  castBooking 
 } from '@/integrations/supabase/client';
 
 export interface BookingFormData {
@@ -63,7 +63,7 @@ export function useBookings() {
       if (error) throw error;
       
       // Cast the data to ensure it matches our Booking type
-      const typedBookings = data?.map(booking => castBookingData(booking)) || [];
+      const typedBookings = data?.map(booking => castBooking(booking)) || [];
       setBookings(typedBookings);
     } catch (error: any) {
       console.error('Error fetching bookings:', error);

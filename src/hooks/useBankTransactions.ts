@@ -1,16 +1,38 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, Transaction, castTransaction } from '@/integrations/supabase/client';
+import { supabase, Transaction, TransactionType, castTransaction } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+
+export interface TransactionFormData {
+  id?: string;
+  bank_account_id: string;
+  amount: number;
+  type: TransactionType;
+  description: string;
+  date: string;
+}
 
 export const useBankTransactions = (bankAccountId?: string) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newTransaction, setNewTransaction] = useState<TransactionFormData>({
+    bank_account_id: bankAccountId || '',
+    amount: 0,
+    type: 'deposit',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     if (bankAccountId) {
       fetchTransactions();
+      // Update the form state when bankAccountId changes
+      setNewTransaction(prev => ({
+        ...prev,
+        bank_account_id: bankAccountId
+      }));
     } else {
       setTransactions([]);
       setIsLoading(false);
@@ -93,10 +115,42 @@ export const useBankTransactions = (bankAccountId?: string) => {
     }
   };
 
+  const handleNewTransactionChange = (field: string, value: any) => {
+    setNewTransaction(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const addTransaction = async () => {
+    const result = await createTransaction(newTransaction);
+    if (result.success) {
+      setIsAddDialogOpen(false);
+      setNewTransaction({
+        bank_account_id: bankAccountId || '',
+        amount: 0,
+        type: 'deposit',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      toast({
+        title: "Transaction added",
+        description: "The transaction has been successfully added",
+      });
+    }
+    return result;
+  };
+
   return {
     transactions,
     isLoading,
     createTransaction,
-    fetchTransactions
+    fetchTransactions,
+    isAddDialogOpen,
+    setIsAddDialogOpen,
+    newTransaction,
+    handleNewTransactionChange,
+    addTransaction
   };
 };
