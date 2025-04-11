@@ -7,6 +7,7 @@ import BookingsList from '@/components/dashboard/BookingsList';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import ExpensesByCategory from '@/components/dashboard/ExpensesByCategory';
 import TaxSummary from '@/components/dashboard/TaxSummary';
+import EarningsGraph from '@/components/dashboard/EarningsGraph';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -113,6 +114,11 @@ const Dashboard = () => {
             value={stats.totalClients.toString()}
             icon={<UserCheck size={20} />}
           />
+        </div>
+        
+        {/* New Earnings Graph Row */}
+        <div className="mb-6">
+          <EarningsGraph />
         </div>
         
         {/* Main content row */}
