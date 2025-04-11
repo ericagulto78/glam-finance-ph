@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Use import.meta.env instead of process.env for Vite applications
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cbozlabhyzmlznhitdea.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNib3psYWJoeXptbHpuaGl0ZGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMTY1NzQsImV4cCI6MjA1OTU5MjU3NH0.FmztyCmPa5ozMDP8HlrIslKkNJ9URCzCq8FrpO_FhfQ';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
-export const ADMIN_EMAIL = 'admin@example.com'; // Add the missing export
+export const ADMIN_EMAIL = 'admin@example.com';
 
 export type Json =
   | string
@@ -28,6 +29,9 @@ export interface Database {
           updated_at: string | null
           user_id: string | null
           undeposited: number | null
+          bank_name: string | null
+          account_name: string | null
+          account_number: string | null
         }
         Insert: {
           balance?: number | null
@@ -39,6 +43,9 @@ export interface Database {
           updated_at?: string | null
           user_id?: string | null
           undeposited?: number | null
+          bank_name?: string | null
+          account_name?: string | null
+          account_number?: string | null
         }
         Update: {
           balance?: number | null
@@ -50,6 +57,9 @@ export interface Database {
           updated_at?: string | null
           user_id?: string | null
           undeposited?: number | null
+          bank_name?: string | null
+          account_name?: string | null
+          account_number?: string | null
         }
         Relationships: [
           {
@@ -125,6 +135,8 @@ export interface Database {
           id: string
           updated_at: string | null
           user_id: string | null
+          tax_deductible: boolean | null
+          is_monthly: boolean | null
         }
         Insert: {
           amount?: number | null
@@ -135,6 +147,8 @@ export interface Database {
           id?: string
           updated_at?: string | null
           user_id?: string | null
+          tax_deductible?: boolean | null
+          is_monthly?: boolean | null
         }
         Update: {
           amount?: number | null
@@ -145,6 +159,8 @@ export interface Database {
           id?: string
           updated_at?: string | null
           user_id?: string | null
+          tax_deductible?: boolean | null
+          is_monthly?: boolean | null
         }
         Relationships: [
           {
@@ -326,6 +342,13 @@ export interface Database {
         Args: {
           row_id: string
           amount_to_add: number
+        }
+        Returns: string
+      }
+      decrement_balance: {
+        Args: {
+          row_id: string
+          amount_to_subtract: number
         }
         Returns: string
       }
