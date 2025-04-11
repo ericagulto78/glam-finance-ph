@@ -9,19 +9,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface ExpenseFilterProps {
   searchTerm: string;
   categoryFilter: string;
+  taxFilter?: boolean;
   onSearchChange: (value: string) => void;
   onCategoryFilterChange: (value: string) => void;
+  onTaxFilterChange?: (value: boolean) => void;
 }
 
 const ExpenseFilter: React.FC<ExpenseFilterProps> = ({
   searchTerm,
   categoryFilter,
+  taxFilter,
   onSearchChange,
   onCategoryFilterChange,
+  onTaxFilterChange,
 }) => {
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -57,6 +63,17 @@ const ExpenseFilter: React.FC<ExpenseFilterProps> = ({
           </SelectContent>
         </Select>
       </div>
+      
+      {onTaxFilterChange && (
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="tax-deductible" 
+            checked={taxFilter}
+            onCheckedChange={onTaxFilterChange}
+          />
+          <Label htmlFor="tax-deductible">Tax Deductible Only</Label>
+        </div>
+      )}
     </div>
   );
 };

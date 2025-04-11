@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
@@ -8,15 +8,19 @@ import { useBankAccounts } from '@/hooks/useBankAccounts';
 import BankAccountCard from '@/components/bank/BankAccountCard';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
 import { useBankTransactions } from '@/hooks/useBankTransactions';
+import { useInvoices } from '@/hooks/useInvoices';
+import { useToast } from '@/components/ui/use-toast';
 
 const BankAccounts: React.FC = () => {
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal' | 'transfer'>('deposit');
+  const { toast } = useToast();
   
   const {
     bankAccounts,
     isLoading,
+    totalStats,
     setAccountDefault,
     deleteBankAccount,
     fetchBankAccounts,
@@ -29,8 +33,18 @@ const BankAccounts: React.FC = () => {
     addTransaction
   } = useBankTransactions();
 
+  const { invoices } = useInvoices();
+
+  // Calculate undeposited cash from invoices
+  const undepositedCash = invoices
+    .filter(invoice => invoice.status === 'paid' && invoice.payment_method === 'cash')
+    .reduce((sum, invoice) => sum + invoice.amount, 0);
+
+  useEffect(() => {
+    fetchBankAccounts();
+  }, []);
+
   const handleAddAccount = () => {
-    // This is handled separately in BankAccount.tsx
     window.location.href = "/bank-account";
   };
 
@@ -63,6 +77,24 @@ const BankAccounts: React.FC = () => {
       />
 
       <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="p-4">
+            <h3 className="text-lg font-medium mb-1">Total Balance</h3>
+            <p className="text-2xl font-bold">₱{totalStats.totalBalance.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">In bank accounts</p>
+          </Card>
+          <Card className="p-4">
+            <h3 className="text-lg font-medium mb-1">Undeposited Cash</h3>
+            <p className="text-2xl font-bold">₱{undepositedCash.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">From cash payments</p>
+          </Card>
+          <Card className="p-4">
+            <h3 className="text-lg font-medium mb-1">Total Cash on Hand</h3>
+            <p className="text-2xl font-bold">₱{(totalStats.totalBalance + undepositedCash).toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">All available funds</p>
+          </Card>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {isLoading ? (
             // Loading skeletons
@@ -88,7 +120,10 @@ const BankAccounts: React.FC = () => {
                   window.location.href = `/bank-account?id=${account.id}`;
                 }}
                 onDelete={() => deleteBankAccount(account.id)}
-                onSetDefault={handleSetDefault}
+                onSetDefault={() => handleSetDefault(account.id)}
+                onDeposit={(id) => handleTransactionClick(id, 'deposit')}
+                onWithdraw={(id) => handleTransactionClick(id, 'withdrawal')}
+                onTransfer={(id) => handleTransactionClick(id, 'transfer')}
               />
             ))
           )}

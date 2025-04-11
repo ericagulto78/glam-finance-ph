@@ -11,7 +11,6 @@ export const ADMIN_EMAIL = 'admin@example.com';
 // Create TypeScript types for our database tables
 export interface BankAccount {
   id: string;
-  name: string;
   type: string;
   balance: number;
   is_default: boolean;
@@ -27,7 +26,6 @@ export interface BankAccount {
 // Helper function to cast database types to our interface
 export const castBankAccount = (data: any): BankAccount => ({
   id: data.id,
-  name: data.name,
   type: data.type,
   balance: data.balance || 0,
   is_default: data.is_default || false,

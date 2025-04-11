@@ -23,7 +23,9 @@ export const useBankTransactions = (bankAccountId?: string) => {
     amount: 0,
     type: 'deposit',
     description: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    fromAccount: '',
+    toAccount: ''
   });
   const { toast } = useToast();
 
@@ -125,7 +127,18 @@ export const useBankTransactions = (bankAccountId?: string) => {
   };
 
   const addTransaction = async () => {
-    const result = await createTransaction(newTransaction);
+    // Convert from the form data structure to the transaction structure
+    const transactionToAdd: any = {
+      bank_account_id: newTransaction.type === 'deposit' ? newTransaction.toAccount : newTransaction.fromAccount,
+      amount: newTransaction.amount,
+      type: newTransaction.type,
+      description: newTransaction.description,
+      date: newTransaction.date,
+      fromAccount: newTransaction.fromAccount,
+      toAccount: newTransaction.toAccount
+    };
+
+    const result = await createTransaction(transactionToAdd);
     if (result.success) {
       setIsAddDialogOpen(false);
       setNewTransaction({
@@ -133,7 +146,9 @@ export const useBankTransactions = (bankAccountId?: string) => {
         amount: 0,
         type: 'deposit',
         description: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        fromAccount: '',
+        toAccount: ''
       });
       
       toast({

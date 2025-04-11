@@ -25,14 +25,11 @@ export function useBankAccounts() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState<BankAccount | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   
   // Initial bank account form state
   const initialAccountState: Omit<BankAccount, 'id' | 'created_at' | 'updated_at' | 'user_id'> = {
-    name: '',
     type: 'checking',
     balance: 0,
     is_default: false,
@@ -60,7 +57,7 @@ export function useBankAccounts() {
       const { data, error } = await supabase
         .from('bank_accounts')
         .select('*')
-        .order('name', { ascending: true });
+        .order('bank_name', { ascending: true });
 
       if (error) throw error;
       
@@ -90,7 +87,6 @@ export function useBankAccounts() {
     setIsLoading(true);
     try {
       const accountToInsert = {
-        name: formData.bankName,
         type: 'checking',
         balance: formData.balance || 0,
         is_default: formData.isDefault || false,
@@ -138,7 +134,6 @@ export function useBankAccounts() {
       const { error } = await supabase
         .from('bank_accounts')
         .update({
-          name: formData.bankName,
           type: 'checking',
           balance: formData.balance,
           is_default: formData.isDefault,
@@ -264,8 +259,8 @@ export function useBankAccounts() {
 
   // Filter bank accounts based on search term
   const filteredAccounts = bankAccounts.filter(account => {
-    const matchesSearch = account.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         account.bank_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = account.bank_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         account.account_name.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesSearch;
   });
@@ -279,16 +274,12 @@ export function useBankAccounts() {
     isEditDialogOpen,
     isDeleteDialogOpen,
     isLoading,
-    isEditing,
-    currentAccount,
     totalStats,
     setSearchTerm,
     setSelectedAccount,
     setIsAddDialogOpen,
     setIsEditDialogOpen,
     setIsDeleteDialogOpen,
-    setIsEditing,
-    setCurrentAccount,
     handleNewAccountChange,
     handleSelectedAccountChange,
     addBankAccount,

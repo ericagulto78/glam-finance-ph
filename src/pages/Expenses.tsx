@@ -84,7 +84,7 @@ const Expenses = () => {
         isDeleteDialogOpen={isDeleteDialogOpen}
         isLoading={isLoading}
         newExpense={newExpense}
-        selectedExpense={selectedExpense as any}
+        selectedExpense={selectedExpense}
         onAddDialogOpenChange={setIsAddDialogOpen}
         onEditDialogOpenChange={setIsEditDialogOpen}
         onDeleteDialogOpenChange={setIsDeleteDialogOpen}
