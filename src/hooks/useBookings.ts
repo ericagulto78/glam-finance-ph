@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,7 +18,11 @@ export interface BookingFormData {
   location: string;
   amount: number;
   status: BookingStatus;
-  reservation_fee?: number; // Added reservation fee
+  reservation_fee?: number;
+  service_details?: string;
+  persons?: number;
+  transportation_fee?: number;
+  early_morning_fee?: number;
 }
 
 export function useBookings() {
@@ -44,7 +47,11 @@ export function useBookings() {
     location: '',
     amount: 0,
     status: 'upcoming',
-    reservation_fee: 0, // Default reservation fee
+    reservation_fee: 0,
+    service_details: '',
+    persons: 1,
+    transportation_fee: 0,
+    early_morning_fee: 0,
   };
   
   const [newBooking, setNewBooking] = useState<BookingFormData>(initialBookingState);
@@ -105,6 +112,10 @@ export function useBookings() {
         amount: newBooking.amount,
         status: newBooking.status,
         reservation_fee: newBooking.reservation_fee || 0,
+        service_details: newBooking.service_details || '',
+        persons: newBooking.persons || 1,
+        transportation_fee: newBooking.transportation_fee || 0,
+        early_morning_fee: newBooking.early_morning_fee || 0,
         user_id: user.id,
       };
 
@@ -157,7 +168,11 @@ export function useBookings() {
           location: selectedBooking.location,
           amount: selectedBooking.amount,
           status: selectedBooking.status,
-          reservation_fee: selectedBooking.reservation_fee || 0
+          reservation_fee: selectedBooking.reservation_fee || 0,
+          service_details: selectedBooking.service_details || '',
+          persons: selectedBooking.persons || 1,
+          transportation_fee: selectedBooking.transportation_fee || 0,
+          early_morning_fee: selectedBooking.early_morning_fee || 0
         })
         .eq('id', selectedBooking.id);
 

@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Plus, Trash } from 'lucide-react';
 import { useServiceTypes, ServiceType } from '@/hooks/useServiceTypes';
 
 export interface BookingFormData {
@@ -29,6 +29,13 @@ export interface BookingFormData {
   persons?: number;
   transportation_fee?: number;
   early_morning_fee?: number;
+}
+
+interface ServiceLineItem {
+  serviceId: string;
+  serviceName: string;
+  persons: number;
+  price: number;
 }
 
 interface BookingFormProps {
@@ -49,7 +56,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   submitLabel,
 }) => {
   const { serviceTypes, fetchServiceTypes } = useServiceTypes();
-  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+  const [lineItems, setLineItems] = useState<ServiceLineItem[]>([]);
   const [baseAmount, setBaseAmount] = useState<number>(0);
 
   useEffect(() => {
@@ -57,29 +64,90 @@ const BookingForm: React.FC<BookingFormProps> = ({
   }, []);
 
   useEffect(() => {
-    calculateTotalAmount();
-  }, [formData.persons, formData.transportation_fee, formData.early_morning_fee, baseAmount]);
+    // Initialize with at least one line item when serviceTypes are available
+    if (serviceTypes.length > 0 && lineItems.length === 0) {
+      setLineItems([{
+        serviceId: '',
+        serviceName: '',
+        persons: 1,
+        price: 0
+      }]);
+    }
+  }, [serviceTypes]);
 
-  const handleServiceTypeChange = (serviceTypeId: string) => {
+  useEffect(() => {
+    calculateTotalAmount();
+  }, [lineItems, formData.transportation_fee, formData.early_morning_fee]);
+
+  const handleServiceTypeChange = (serviceTypeId: string, index: number) => {
     const selectedType = serviceTypes.find(type => type.id === serviceTypeId);
     if (selectedType) {
-      setSelectedServiceType(selectedType);
-      setBaseAmount(selectedType.default_price);
-      onFormChange('service', selectedType.name);
-      // Don't update amount directly, let the calculateTotalAmount function handle it
-      // This will ensure it considers the number of persons and other fees
-      calculateTotalAmount(selectedType.default_price);
+      const updatedLineItems = [...lineItems];
+      updatedLineItems[index] = {
+        ...updatedLineItems[index],
+        serviceId: selectedType.id,
+        serviceName: selectedType.name,
+        price: selectedType.default_price
+      };
+      setLineItems(updatedLineItems);
+      
+      // Update the service name in formData to a concatenated string of all services
+      updateServiceNameInFormData(updatedLineItems);
+      
+      // Calculate total amount
+      calculateTotalAmount(updatedLineItems);
     }
   };
 
-  const calculateTotalAmount = (basePrice?: number) => {
-    const price = basePrice !== undefined ? basePrice : baseAmount;
-    const persons = formData.persons || 1;
+  const handlePersonsChange = (persons: number, index: number) => {
+    const updatedLineItems = [...lineItems];
+    updatedLineItems[index] = {
+      ...updatedLineItems[index],
+      persons: persons
+    };
+    setLineItems(updatedLineItems);
+    calculateTotalAmount(updatedLineItems);
+  };
+
+  const addLineItem = () => {
+    setLineItems([...lineItems, {
+      serviceId: '',
+      serviceName: '',
+      persons: 1,
+      price: 0
+    }]);
+  };
+
+  const removeLineItem = (index: number) => {
+    if (lineItems.length > 1) {
+      const updatedLineItems = lineItems.filter((_, i) => i !== index);
+      setLineItems(updatedLineItems);
+      updateServiceNameInFormData(updatedLineItems);
+      calculateTotalAmount(updatedLineItems);
+    }
+  };
+
+  const updateServiceNameInFormData = (items: ServiceLineItem[]) => {
+    const serviceDescription = items
+      .filter(item => item.serviceName)
+      .map(item => `${item.persons} pax ${item.serviceName}`)
+      .join('\n');
+    
+    onFormChange('service', serviceDescription);
+  };
+
+  const calculateTotalAmount = (items = lineItems) => {
+    // Calculate subtotal from line items
+    const subtotal = items.reduce((sum, item) => {
+      return sum + (item.price * item.persons);
+    }, 0);
+    
+    // Add fees
     const transportationFee = formData.transportation_fee || 0;
     const earlyMorningFee = formData.early_morning_fee || 0;
     
-    // Multiply base price by number of persons, then add fees
-    const total = (price * persons) + transportationFee + earlyMorningFee;
+    // Total amount
+    const total = subtotal + transportationFee + earlyMorningFee;
     
     onFormChange('amount', total);
   };
@@ -97,39 +165,111 @@ const BookingForm: React.FC<BookingFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="serviceType">Service Type</Label>
-          <Select
-            value={selectedServiceType?.id || ""}
-            onValueChange={handleServiceTypeChange}
-          >
-            <SelectTrigger id="serviceType">
-              <SelectValue placeholder="Select a service type" />
-            </SelectTrigger>
-            <SelectContent>
-              {serviceTypes.map(type => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.name} - ₱{type.default_price}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="date">Date</Label>
+          <Input 
+            id="date" 
+            type="date" 
+            value={formData.date}
+            onChange={(e) => onFormChange('date', e.target.value)}
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="time">Time</Label>
+          <Input 
+            id="time" 
+            value={formData.time}
+            onChange={(e) => onFormChange('time', e.target.value)}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="location">Location</Label>
+          <Input 
+            id="location" 
+            value={formData.location}
+            onChange={(e) => onFormChange('location', e.target.value)}
+          />
         </div>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="service">Service Name</Label>
-        <Input 
-          id="service" 
-          value={formData.service}
-          onChange={(e) => onFormChange('service', e.target.value)}
-        />
-        <p className="text-sm text-muted-foreground">
-          You can customize the service name or use the one from the selected service type
-        </p>
+        <div className="flex items-center justify-between">
+          <Label>Services</Label>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={addLineItem}
+            className="flex items-center gap-1"
+          >
+            <Plus size={16} /> Add Service
+          </Button>
+        </div>
+        
+        <div className="space-y-3 mt-2">
+          {lineItems.map((item, index) => (
+            <div key={index} className="grid grid-cols-12 gap-2 items-end border p-3 rounded-md">
+              <div className="col-span-6">
+                <Label htmlFor={`serviceType-${index}`}>Service Type</Label>
+                <Select
+                  value={item.serviceId}
+                  onValueChange={(value) => handleServiceTypeChange(value, index)}
+                >
+                  <SelectTrigger id={`serviceType-${index}`}>
+                    <SelectValue placeholder="Select a service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map(type => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name} - ₱{type.default_price}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-3">
+                <Label htmlFor={`persons-${index}`}>Persons</Label>
+                <Input 
+                  id={`persons-${index}`} 
+                  type="number" 
+                  min="1"
+                  value={item.persons}
+                  onChange={(e) => handlePersonsChange(parseInt(e.target.value) || 1, index)}
+                />
+              </div>
+              
+              <div className="col-span-2">
+                <Label htmlFor={`subtotal-${index}`}>Subtotal</Label>
+                <Input 
+                  id={`subtotal-${index}`} 
+                  value={`₱${(item.price * item.persons).toLocaleString()}`}
+                  className="bg-muted"
+                  readOnly
+                />
+              </div>
+              
+              <div className="col-span-1 flex justify-end">
+                <Button 
+                  type="button" 
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeLineItem(index)}
+                  disabled={lineItems.length <= 1}
+                >
+                  <Trash size={16} className="text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="service_details">Service Details</Label>
+        <Label htmlFor="service_details">Additional Service Details</Label>
         <Textarea 
           id="service_details" 
           value={formData.service_details || ''}
@@ -139,77 +279,38 @@ const BookingForm: React.FC<BookingFormProps> = ({
         />
       </div>
       
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input 
-            id="date" 
-            type="date" 
-            value={formData.date}
-            onChange={(e) => onFormChange('date', e.target.value)}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="time">Time</Label>
-          <Input 
-            id="time" 
-            value={formData.time}
-            onChange={(e) => onFormChange('time', e.target.value)}
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="location">Location</Label>
-        <Input 
-          id="location" 
-          value={formData.location}
-          onChange={(e) => onFormChange('location', e.target.value)}
-        />
-      </div>
-      
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* Base price is now handled in the calculation */}
-        <div className="space-y-2">
-          <Label htmlFor="persons">Number of Persons</Label>
-          <Input 
-            id="persons" 
-            type="number" 
-            min="1"
-            value={formData.persons || 1}
-            onChange={(e) => onFormChange('persons', parseInt(e.target.value) || 1)}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="transportation_fee">Transportation Fee (₱)</Label>
-          <Input 
-            id="transportation_fee" 
-            type="number" 
-            value={formData.transportation_fee || 0}
-            onChange={(e) => onFormChange('transportation_fee', parseFloat(e.target.value) || 0)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Out of town fee (not included in income)
-          </p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="early_morning_fee">Early Morning Fee (₱)</Label>
-          <Input 
-            id="early_morning_fee" 
-            type="number" 
-            value={formData.early_morning_fee || 0}
-            onChange={(e) => onFormChange('early_morning_fee', parseFloat(e.target.value) || 0)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Additional fee for early service (not included in income)
-          </p>
+      <div className="border-t pt-4 mt-2">
+        <h3 className="font-medium mb-3">Other Fees (Not Added to Income/Sales)</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="transportation_fee">Transportation Fee (₱)</Label>
+            <Input 
+              id="transportation_fee" 
+              type="number" 
+              value={formData.transportation_fee || 0}
+              onChange={(e) => onFormChange('transportation_fee', parseFloat(e.target.value) || 0)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Out of town fee (not included in income)
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="early_morning_fee">Early Morning Fee (₱)</Label>
+            <Input 
+              id="early_morning_fee" 
+              type="number" 
+              value={formData.early_morning_fee || 0}
+              onChange={(e) => onFormChange('early_morning_fee', parseFloat(e.target.value) || 0)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Additional fee for early service (not included in income)
+            </p>
+          </div>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 border-t pt-4 mt-2">
         <div className="space-y-2">
           <Label htmlFor="amount">Total Amount (₱)</Label>
           <Input 
@@ -221,7 +322,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             readOnly
           />
           <p className="text-xs text-muted-foreground">
-            Calculated based on base price × persons + fees
+            Calculated based on services and fees
           </p>
         </div>
         

@@ -40,11 +40,14 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
     }
   };
 
+  // Parse service details (split by newlines)
+  const serviceLines = booking.service.split('\n').filter(line => line.trim() !== '');
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-start">
-          <h2 className="text-2xl font-bold">{booking.service}</h2>
+          <h2 className="text-2xl font-bold">Booking Details</h2>
           <Badge className={getStatusColor(booking.status)}>
             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
           </Badge>
@@ -66,20 +69,63 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             <p><span className="font-medium">Date:</span> {format(new Date(booking.date), 'MMMM d, yyyy')}</p>
             <p><span className="font-medium">Time:</span> {booking.time}</p>
             <p><span className="font-medium">Location:</span> {booking.location}</p>
-            <p><span className="font-medium">Amount:</span> ₱{booking.amount.toLocaleString()}</p>
-            {booking.reservation_fee > 0 && (
-              <p><span className="font-medium">Reservation Fee:</span> ₱{booking.reservation_fee.toLocaleString()}</p>
-            )}
           </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Services</h3>
+        <div className="bg-muted p-4 rounded-md">
+          {serviceLines.map((line, index) => (
+            <div key={index} className="mb-2 last:mb-0">
+              {line}
+            </div>
+          ))}
         </div>
       </div>
 
       {booking.service_details && (
         <div>
-          <h3 className="text-lg font-semibold mb-2">Service Details</h3>
+          <h3 className="text-lg font-semibold mb-2">Additional Service Details</h3>
           <p>{booking.service_details}</p>
         </div>
       )}
+
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Fees</h3>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2">
+            <span>Service Fee:</span>
+            <span className="text-right">₱{(booking.amount - (booking.transportation_fee || 0) - (booking.early_morning_fee || 0)).toLocaleString()}</span>
+          </div>
+          
+          {booking.transportation_fee > 0 && (
+            <div className="grid grid-cols-2">
+              <span>Transportation Fee:</span>
+              <span className="text-right">₱{booking.transportation_fee.toLocaleString()}</span>
+            </div>
+          )}
+          
+          {booking.early_morning_fee > 0 && (
+            <div className="grid grid-cols-2">
+              <span>Early Morning Fee:</span>
+              <span className="text-right">₱{booking.early_morning_fee.toLocaleString()}</span>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-2 font-bold pt-2 border-t">
+            <span>Total Amount:</span>
+            <span className="text-right">₱{booking.amount.toLocaleString()}</span>
+          </div>
+          
+          {booking.reservation_fee > 0 && (
+            <div className="grid grid-cols-2 text-muted-foreground">
+              <span>Reservation Fee:</span>
+              <span className="text-right">₱{booking.reservation_fee.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Invoice creation section */}
       <div className="mt-6 pt-4 border-t">
