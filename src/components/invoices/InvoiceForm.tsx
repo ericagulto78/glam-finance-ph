@@ -159,7 +159,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <SelectContent>
               {bankAccounts.map(account => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.bankName} - {account.accountName}
+                  {account.bank_name} - {account.account_name}
                 </SelectItem>
               ))}
             </SelectContent>

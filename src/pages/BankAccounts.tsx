@@ -17,11 +17,9 @@ const BankAccounts: React.FC = () => {
   const {
     bankAccounts,
     isLoading,
-    addBankAccount,
-    updateBankAccount,
+    setAccountDefault,
     deleteBankAccount,
     fetchBankAccounts,
-    setAccountDefault
   } = useBankAccounts();
 
   const {
@@ -46,6 +44,10 @@ const BankAccounts: React.FC = () => {
       handleNewTransactionChange('fromAccount', accountId);
     }
     setIsTransactionDialogOpen(true);
+  };
+
+  const handleSetDefault = (id: string) => {
+    setAccountDefault(id);
   };
 
   return (
@@ -86,7 +88,7 @@ const BankAccounts: React.FC = () => {
                   window.location.href = `/bank-account?id=${account.id}`;
                 }}
                 onDelete={() => deleteBankAccount(account.id)}
-                onSetDefault={() => setAccountDefault(account.id)}
+                onSetDefault={handleSetDefault}
               />
             ))
           )}

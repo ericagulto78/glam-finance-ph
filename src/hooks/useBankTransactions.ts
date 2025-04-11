@@ -10,6 +10,8 @@ export interface TransactionFormData {
   type: TransactionType;
   description: string;
   date: string;
+  fromAccount?: string;
+  toAccount?: string;
 }
 
 export const useBankTransactions = (bankAccountId?: string) => {

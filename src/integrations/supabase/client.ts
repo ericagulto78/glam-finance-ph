@@ -171,7 +171,7 @@ export const castServiceType = (data: any): ServiceType => ({
   user_id: data.user_id
 });
 
-export type TransactionType = 'deposit' | 'withdrawal';
+export type TransactionType = 'deposit' | 'withdrawal' | 'transfer';
 
 export interface Transaction {
   id: string;
@@ -183,6 +183,8 @@ export interface Transaction {
   created_at: string;
   updated_at: string;
   user_id: string;
+  fromAccount?: string;
+  toAccount?: string;
 }
 
 // Helper function to cast database types to our interface
@@ -195,7 +197,9 @@ export const castTransaction = (data: any): Transaction => ({
   date: data.date,
   created_at: data.created_at,
   updated_at: data.updated_at,
-  user_id: data.user_id
+  user_id: data.user_id,
+  fromAccount: data.fromAccount,
+  toAccount: data.toAccount
 });
 
 // Function to check if a user is an admin

@@ -25,9 +25,9 @@ const BankAccountCard: React.FC<BankAccountCardProps> = ({
 }) => {
   return (
     <div 
-      className={`p-4 border rounded-lg relative ${account.isDefault ? 'border-rose-500' : 'border-border'}`}
+      className={`p-4 border rounded-lg relative ${account.is_default ? 'border-rose-500' : 'border-border'}`}
     >
-      {account.isDefault && (
+      {account.is_default && (
         <div className="absolute top-2 right-2 text-rose-500 flex items-center gap-1">
           <CheckCircle size={14} />
           <span className="text-xs font-medium">Default</span>
@@ -39,15 +39,15 @@ const BankAccountCard: React.FC<BankAccountCardProps> = ({
           <Building size={18} />
         </div>
         <div className="ml-3">
-          <h3 className="font-medium">{account.bankName}</h3>
-          <p className="text-xs text-muted-foreground">{account.accountNumber}</p>
+          <h3 className="font-medium">{account.bank_name}</h3>
+          <p className="text-xs text-muted-foreground">{account.account_number}</p>
         </div>
       </div>
       
       <div className="space-y-1 mb-3">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Account Name:</span>
-          <span>{account.accountName}</span>
+          <span>{account.account_name}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Balance:</span>
@@ -101,7 +101,7 @@ const BankAccountCard: React.FC<BankAccountCardProps> = ({
         )}
         
         <div className="flex ml-auto gap-2">
-          {!account.isDefault && (
+          {!account.is_default && (
             <Button 
               variant="outline" 
               size="sm"

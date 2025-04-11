@@ -133,7 +133,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
                 <SelectContent>
                   {bankAccounts.map(account => (
                     <SelectItem key={account.id} value={account.id}>
-                      {account.bankName} - {account.accountName} (₱{account.balance.toLocaleString()})
+                      {account.bank_name} - {account.account_name} (₱{account.balance.toLocaleString()})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -154,7 +154,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
                 <SelectContent>
                   {bankAccounts.map(account => (
                     <SelectItem key={account.id} value={account.id}>
-                      {account.bankName} - {account.accountName} (₱{account.balance.toLocaleString()})
+                      {account.bank_name} - {account.account_name} (₱{account.balance.toLocaleString()})
                     </SelectItem>
                   ))}
                 </SelectContent>

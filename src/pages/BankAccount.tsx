@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { 
   Card, 
   CardContent, 
@@ -14,8 +14,6 @@ import {
 } from '@/components/ui/card';
 import { 
   Plus, 
-  PenSquare, 
-  Trash2, 
   CreditCard, 
   DollarSign, 
   Wallet,
@@ -24,24 +22,27 @@ import {
   ArrowDownLeft
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { BankAccountFormData, useBankAccounts } from '@/hooks/useBankAccounts';
-import { useBankTransactions, TransactionFormData } from '@/hooks/useBankTransactions';
+import { useBankAccounts, BankAccountFormData } from '@/hooks/useBankAccounts';
+import { useBankTransactions } from '@/hooks/useBankTransactions';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
 import BankAccountCard from '@/components/bank/BankAccountCard';
 
 const BankAccount = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentAccount, setCurrentAccount] = useState<any>(null);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const accountId = queryParams.get('id');
+  
   const {
     bankAccounts,
     isLoading,
-    isEditing,
-    currentAccount,
     totalStats,
-    setIsEditing,
-    setCurrentAccount,
-    addBankAccount,
-    updateBankAccount,
+    setAccountDefault,
     deleteBankAccount,
-    setAccountDefault
+    fetchBankAccounts,
+    addBankAccount,
+    updateBankAccount
   } = useBankAccounts();
 
   const {
@@ -51,10 +52,30 @@ const BankAccount = () => {
     isLoading: isTransactionLoading,
     setIsAddDialogOpen: setIsTransactionDialogOpen,
     handleNewTransactionChange,
-    addTransaction
-  } = useBankTransactions();
+    addTransaction,
+    fetchTransactions
+  } = useBankTransactions(accountId || undefined);
 
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal' | 'transfer'>('deposit');
+
+  useEffect(() => {
+    if (accountId) {
+      // Load the specific account if ID is provided
+      const account = bankAccounts.find(acc => acc.id === accountId);
+      if (account) {
+        setCurrentAccount(account);
+        setIsEditing(true);
+        form.reset({
+          bankName: account.bank_name,
+          accountName: account.account_name,
+          accountNumber: account.account_number,
+          isDefault: account.is_default,
+          balance: account.balance,
+          undeposited: account.undeposited
+        });
+      }
+    }
+  }, [bankAccounts, accountId]);
 
   const form = useForm<BankAccountFormData>({
     defaultValues: {
@@ -84,10 +105,10 @@ const BankAccount = () => {
     setIsEditing(true);
     setCurrentAccount(account);
     form.reset({
-      bankName: account.bankName,
-      accountName: account.accountName,
-      accountNumber: account.accountNumber,
-      isDefault: account.isDefault,
+      bankName: account.bank_name,
+      accountName: account.account_name,
+      accountNumber: account.account_number,
+      isDefault: account.is_default,
       balance: account.balance,
       undeposited: account.undeposited
     });
@@ -123,6 +144,10 @@ const BankAccount = () => {
     setIsTransactionDialogOpen(true);
   };
 
+  const handleSetDefault = (id: string) => {
+    setAccountDefault(id);
+  };
+
   const recentTransactions = transactions.slice(0, 5);
 
   return (
@@ -139,7 +164,7 @@ const BankAccount = () => {
 
       <div className="p-6">
         {/* Financial summary */}
-        {!isEditing && (
+        {!isEditing && totalStats && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardContent className="p-6">
@@ -331,7 +356,7 @@ const BankAccount = () => {
                         account={account}
                         onEdit={handleEditAccount}
                         onDelete={handleDeleteAccount}
-                        onSetDefault={setAccountDefault}
+                        onSetDefault={handleSetDefault}
                       />
                     ))}
                   </div>

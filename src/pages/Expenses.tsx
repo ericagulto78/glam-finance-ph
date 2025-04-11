@@ -13,7 +13,6 @@ const Expenses = () => {
     expenses,
     searchTerm,
     categoryFilter,
-    taxFilter,
     newExpense,
     selectedExpense,
     isAddDialogOpen,
@@ -22,7 +21,6 @@ const Expenses = () => {
     isLoading,
     setSearchTerm,
     setCategoryFilter,
-    setTaxFilter,
     setSelectedExpense,
     setIsAddDialogOpen,
     setIsEditDialogOpen,
@@ -64,10 +62,8 @@ const Expenses = () => {
         <ExpenseFilter 
           searchTerm={searchTerm}
           categoryFilter={categoryFilter}
-          taxFilter={taxFilter}
           onSearchChange={setSearchTerm}
           onCategoryFilterChange={setCategoryFilter}
-          onTaxFilterChange={setTaxFilter}
         />
 
         <Card>
@@ -88,7 +84,7 @@ const Expenses = () => {
         isDeleteDialogOpen={isDeleteDialogOpen}
         isLoading={isLoading}
         newExpense={newExpense}
-        selectedExpense={selectedExpense}
+        selectedExpense={selectedExpense as any}
         onAddDialogOpenChange={setIsAddDialogOpen}
         onEditDialogOpenChange={setIsEditDialogOpen}
         onDeleteDialogOpenChange={setIsDeleteDialogOpen}

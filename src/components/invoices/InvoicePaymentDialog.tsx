@@ -45,7 +45,7 @@ const InvoicePaymentDialog: React.FC<InvoicePaymentDialogProps> = ({
       fetchBankAccounts();
       // Default to the first bank account if available
       if (bankAccounts.length > 0) {
-        const defaultAccount = bankAccounts.find(account => account.isDefault);
+        const defaultAccount = bankAccounts.find(account => account.is_default);
         setSelectedBankId(defaultAccount ? defaultAccount.id : bankAccounts[0].id);
       }
     }
@@ -106,7 +106,7 @@ const InvoicePaymentDialog: React.FC<InvoicePaymentDialogProps> = ({
                 <SelectContent>
                   {bankAccounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
-                      {account.bankName} - {account.accountName}
+                      {account.bank_name} - {account.account_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
