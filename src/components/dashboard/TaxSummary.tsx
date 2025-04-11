@@ -10,22 +10,23 @@ interface TaxItem {
   progress: number;
 }
 
+// More realistic tax amounts that would make sense for a freelancer
 const taxItems: TaxItem[] = [
   {
     name: 'Income Tax',
-    amount: 12500,
+    amount: 5200,
     dueDate: '2025-04-15',
     progress: 65,
   },
   {
     name: 'VAT',
-    amount: 8300,
+    amount: 1900,
     dueDate: '2025-04-25',
     progress: 40,
   },
   {
     name: 'Business Tax',
-    amount: 5200,
+    amount: 1250,
     dueDate: '2025-06-30',
     progress: 25,
   },

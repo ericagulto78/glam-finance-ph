@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Invoice } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
-import { Printer, Edit, Save, X } from 'lucide-react';
+import { Printer, Edit, Save, X, Mail } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import InvoiceEmailForm from './InvoiceEmailForm';
 
 interface InvoiceViewProps {
   invoice: Invoice;
@@ -21,6 +27,7 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedInvoice, setEditedInvoice] = useState<Invoice>({...invoice});
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const getStatusColor = (status: string) => {
@@ -128,6 +135,10 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({
     setIsEditing(false);
   };
 
+  const handleEmailInvoice = () => {
+    setIsEmailDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6 py-2">
       <div className="flex justify-between items-center">
@@ -178,6 +189,9 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({
               <Badge className={getStatusColor(invoice.status)}>
                 {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
               </Badge>
+              <Button variant="outline" size="icon" onClick={handleEmailInvoice} title="Email Invoice">
+                <Mail size={16} />
+              </Button>
               <Button variant="outline" size="icon" onClick={handlePrint} title="Print Invoice">
                 <Printer size={16} />
               </Button>
@@ -267,6 +281,7 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({
         </div>
       </div>
 
+      {/* Payment button section */}
       {invoice.status !== 'paid' && onProcessPayment && (
         <div className="pt-4">
           <Button onClick={onProcessPayment} className="w-full">
@@ -274,6 +289,19 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({
           </Button>
         </div>
       )}
+
+      {/* Email dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Email Invoice</DialogTitle>
+          </DialogHeader>
+          <InvoiceEmailForm 
+            invoice={invoice} 
+            onClose={() => setIsEmailDialogOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

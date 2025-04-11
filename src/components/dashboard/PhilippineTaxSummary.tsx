@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface TaxBracket {
   threshold: number;
@@ -19,7 +21,7 @@ const PHILIPPINE_TAX_BRACKETS: TaxBracket[] = [
   { threshold: Infinity, rate: 0.35, fixedAmount: 2202500, excessRate: 0.35 },
 ];
 
-const computeTax = (annualIncome: number): number => {
+const computeGraduatedTax = (annualIncome: number): number => {
   let bracket = PHILIPPINE_TAX_BRACKETS.find(
     (bracket, index, arr) => 
       annualIncome <= bracket.threshold || 
@@ -42,6 +44,10 @@ const computeTax = (annualIncome: number): number => {
   return tax;
 };
 
+const computeFlatRateTax = (annualIncome: number): number => {
+  return annualIncome * 0.08; // 8% flat rate
+};
+
 interface PhilippineTaxSummaryProps {
   annualIncome?: number;
 }
@@ -49,14 +55,21 @@ interface PhilippineTaxSummaryProps {
 const PhilippineTaxSummary: React.FC<PhilippineTaxSummaryProps> = ({ 
   annualIncome = 450000 // Default annual income for freelancers
 }) => {
-  const annualTax = computeTax(annualIncome);
+  const [useFlatRate, setUseFlatRate] = useState(false);
+  
+  // Calculate taxes using both methods
+  const graduatedTax = computeGraduatedTax(annualIncome);
+  const flatRateTax = computeFlatRateTax(annualIncome);
+  
+  // Use the selected tax calculation method
+  const annualTax = useFlatRate ? flatRateTax : graduatedTax;
   const monthlyTax = annualTax / 12;
   const quarterlyTax = annualTax / 4;
   
   // Calculate effective tax rate
   const effectiveRate = annualIncome > 0 ? annualTax / annualIncome * 100 : 0;
   
-  // Find current tax bracket
+  // Find current tax bracket for graduated tax
   const currentBracket = PHILIPPINE_TAX_BRACKETS.find(
     (bracket, index, arr) => 
       annualIncome <= bracket.threshold || 
@@ -65,7 +78,7 @@ const PhilippineTaxSummary: React.FC<PhilippineTaxSummaryProps> = ({
   
   // Generate percentage of bracket filled
   const bracketProgress = () => {
-    if (!currentBracket) return 0;
+    if (!currentBracket || useFlatRate) return 0;
     
     const bracketIndex = PHILIPPINE_TAX_BRACKETS.indexOf(currentBracket);
     if (bracketIndex === 0) return 0;
@@ -89,14 +102,28 @@ const PhilippineTaxSummary: React.FC<PhilippineTaxSummaryProps> = ({
               <h4 className="font-medium">Annual Income</h4>
               <span className="font-medium">₱{annualIncome.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-medium">Tax Bracket</h4>
-              <span className="font-medium">{currentBracket?.rate ? `${currentBracket.rate * 100}%` : '0%'}</span>
+            
+            <div className="flex items-center space-x-2 mb-4 px-2 py-3 bg-muted rounded-md">
+              <Switch 
+                id="flat-rate" 
+                checked={useFlatRate}
+                onCheckedChange={setUseFlatRate}
+              />
+              <Label htmlFor="flat-rate">Use 8% Flat Rate (for gross sales ≤₱3M)</Label>
             </div>
-            <div className="flex items-center gap-3 mb-4">
-              <Progress value={bracketProgress()} className="h-2" />
-              <span className="text-xs font-medium w-12">{Math.round(bracketProgress())}%</span>
-            </div>
+            
+            {!useFlatRate && (
+              <>
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-medium">Tax Bracket</h4>
+                  <span className="font-medium">{currentBracket?.rate ? `${currentBracket.rate * 100}%` : '0%'}</span>
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <Progress value={bracketProgress()} className="h-2" />
+                  <span className="text-xs font-medium w-12">{Math.round(bracketProgress())}%</span>
+                </div>
+              </>
+            )}
           </div>
           
           <div className="space-y-4">
@@ -104,6 +131,9 @@ const PhilippineTaxSummary: React.FC<PhilippineTaxSummaryProps> = ({
               <h4 className="font-medium">Annual Tax Liability</h4>
               <p className="text-2xl font-bold mt-1">₱{annualTax.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-muted-foreground">Effective Rate: {effectiveRate.toFixed(2)}%</p>
+              {useFlatRate && (
+                <p className="text-xs text-muted-foreground mt-1">Based on 8% flat rate tax</p>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4 pt-2">
@@ -137,6 +167,16 @@ const PhilippineTaxSummary: React.FC<PhilippineTaxSummaryProps> = ({
                 <span>Q4 (October - December)</span>
                 <span>January 15, 2026</span>
               </div>
+            </div>
+          </div>
+          
+          <div className="pt-4 border-t">
+            <h4 className="font-medium mb-3">Tax Rules for Freelancers</h4>
+            <div className="text-sm space-y-2 text-muted-foreground">
+              <p>• Graduated rates (0% to 35%) or 8% flat rate if gross sales ≤₱3M</p>
+              <p>• VAT registration required if annual income exceeds ₱3M</p>
+              <p>• File quarterly income tax returns using BIR Form 1701Q</p>
+              <p>• Annual income tax return using BIR Form 1701</p>
             </div>
           </div>
         </div>

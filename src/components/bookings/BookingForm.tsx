@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { CheckCircle2 } from 'lucide-react';
 import { useServiceTypes, ServiceType } from '@/hooks/useServiceTypes';
 
@@ -25,6 +26,9 @@ export interface BookingFormData {
   status: 'upcoming' | 'completed' | 'cancelled';
   reservation_fee?: number;
   service_details?: string;
+  persons?: number;
+  transportation_fee?: number;
+  early_morning_fee?: number;
 }
 
 interface BookingFormProps {
@@ -46,18 +50,38 @@ const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { serviceTypes, fetchServiceTypes } = useServiceTypes();
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+  const [baseAmount, setBaseAmount] = useState<number>(0);
 
   useEffect(() => {
     fetchServiceTypes();
   }, []);
 
+  useEffect(() => {
+    calculateTotalAmount();
+  }, [formData.persons, formData.transportation_fee, formData.early_morning_fee, baseAmount]);
+
   const handleServiceTypeChange = (serviceTypeId: string) => {
     const selectedType = serviceTypes.find(type => type.id === serviceTypeId);
     if (selectedType) {
       setSelectedServiceType(selectedType);
+      setBaseAmount(selectedType.default_price);
       onFormChange('service', selectedType.name);
-      onFormChange('amount', selectedType.default_price);
+      // Don't update amount directly, let the calculateTotalAmount function handle it
+      // This will ensure it considers the number of persons and other fees
+      calculateTotalAmount(selectedType.default_price);
     }
+  };
+
+  const calculateTotalAmount = (basePrice?: number) => {
+    const price = basePrice !== undefined ? basePrice : baseAmount;
+    const persons = formData.persons || 1;
+    const transportationFee = formData.transportation_fee || 0;
+    const earlyMorningFee = formData.early_morning_fee || 0;
+    
+    // Multiply base price by number of persons, then add fees
+    const total = (price * persons) + transportationFee + earlyMorningFee;
+    
+    onFormChange('amount', total);
   };
 
   return (
@@ -145,15 +169,60 @@ const BookingForm: React.FC<BookingFormProps> = ({
         />
       </div>
       
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Base price is now handled in the calculation */}
+        <div className="space-y-2">
+          <Label htmlFor="persons">Number of Persons</Label>
+          <Input 
+            id="persons" 
+            type="number" 
+            min="1"
+            value={formData.persons || 1}
+            onChange={(e) => onFormChange('persons', parseInt(e.target.value) || 1)}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="transportation_fee">Transportation Fee (₱)</Label>
+          <Input 
+            id="transportation_fee" 
+            type="number" 
+            value={formData.transportation_fee || 0}
+            onChange={(e) => onFormChange('transportation_fee', parseFloat(e.target.value) || 0)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Out of town fee (not included in income)
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="early_morning_fee">Early Morning Fee (₱)</Label>
+          <Input 
+            id="early_morning_fee" 
+            type="number" 
+            value={formData.early_morning_fee || 0}
+            onChange={(e) => onFormChange('early_morning_fee', parseFloat(e.target.value) || 0)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Additional fee for early service (not included in income)
+          </p>
+        </div>
+      </div>
+      
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount (₱)</Label>
+          <Label htmlFor="amount">Total Amount (₱)</Label>
           <Input 
             id="amount" 
             type="number" 
             value={formData.amount}
             onChange={(e) => onFormChange('amount', parseFloat(e.target.value) || 0)}
+            className="bg-muted"
+            readOnly
           />
+          <p className="text-xs text-muted-foreground">
+            Calculated based on base price × persons + fees
+          </p>
         </div>
         
         <div className="space-y-2">
