@@ -7,6 +7,7 @@ import ExpenseTable from '@/components/expenses/ExpenseTable';
 import ExpenseFilter from '@/components/expenses/ExpenseFilter';
 import ExpenseDialogs from '@/components/expenses/ExpenseDialogs';
 import { useExpenses } from '@/hooks/useExpenses';
+import { Expense } from '@/integrations/supabase/client';
 
 const Expenses = () => {
   const [taxFilter, setTaxFilter] = useState<boolean>(false);
