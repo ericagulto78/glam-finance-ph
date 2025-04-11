@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +41,13 @@ const ServiceTypeForm: React.FC<ServiceTypeFormProps> = ({
   submitLabel,
 }) => {
   const [selectedIcon, setSelectedIcon] = useState(formData.icon || 'Paintbrush');
+
+  // Update selectedIcon if formData.icon changes
+  useEffect(() => {
+    if (formData.icon) {
+      setSelectedIcon(formData.icon);
+    }
+  }, [formData.icon]);
 
   const handleIconSelect = (iconName: string) => {
     setSelectedIcon(iconName);

@@ -11,12 +11,14 @@ export interface ServiceType {
   user_id: string;
   created_at: string;
   updated_at: string;
+  icon?: string;
 }
 
 export interface ServiceTypeFormData {
   id?: string;
   name: string;
   default_price: number;
+  icon?: string;
 }
 
 export function useServiceTypes() {
@@ -32,7 +34,8 @@ export function useServiceTypes() {
   // Initial form state
   const initialServiceTypeState: ServiceTypeFormData = {
     name: '',
-    default_price: 0
+    default_price: 0,
+    icon: 'Paintbrush' // Set a default icon
   };
   
   const [newServiceType, setNewServiceType] = useState<ServiceTypeFormData>(initialServiceTypeState);
@@ -85,6 +88,7 @@ export function useServiceTypes() {
       const serviceTypeToInsert = {
         name: newServiceType.name,
         default_price: newServiceType.default_price || 0,
+        icon: newServiceType.icon || 'Paintbrush', // Include the icon property
         user_id: user.id
       };
 
@@ -124,7 +128,8 @@ export function useServiceTypes() {
         .from('service_types')
         .update({
           name: selectedServiceType.name,
-          default_price: selectedServiceType.default_price
+          default_price: selectedServiceType.default_price,
+          icon: selectedServiceType.icon // Include the icon in the update
         })
         .eq('id', selectedServiceType.id);
 
