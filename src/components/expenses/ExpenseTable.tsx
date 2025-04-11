@@ -22,8 +22,8 @@ import {
 interface ExpenseTableProps {
   expenses: Expense[];
   isLoading: boolean;
-  onEditExpense: (expense: Expense) => void;
-  onDeleteExpense: (expense: Expense) => void;
+  onEditExpense: (expense: Partial<Expense>) => void;
+  onDeleteExpense: (expense: Partial<Expense>) => void;
 }
 
 const ExpenseTable: React.FC<ExpenseTableProps> = ({

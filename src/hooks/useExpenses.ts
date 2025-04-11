@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -232,7 +233,8 @@ export function useExpenses() {
 
   // Filter expenses based on search term and category
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         expense.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
     

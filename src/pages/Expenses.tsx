@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
@@ -9,6 +9,8 @@ import ExpenseDialogs from '@/components/expenses/ExpenseDialogs';
 import { useExpenses } from '@/hooks/useExpenses';
 
 const Expenses = () => {
+  const [taxFilter, setTaxFilter] = useState<boolean>(false);
+  
   const {
     expenses,
     searchTerm,
@@ -36,15 +38,20 @@ const Expenses = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleEditExpense = (expense: any) => {
+  const handleEditExpense = (expense: Partial<Expense>) => {
     setSelectedExpense(expense);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteExpense = (expense: any) => {
+  const handleDeleteExpense = (expense: Partial<Expense>) => {
     setSelectedExpense(expense);
     setIsDeleteDialogOpen(true);
   };
+
+  // Filter expenses by tax deductible status if the filter is active
+  const filteredExpenses = taxFilter 
+    ? expenses.filter(expense => expense.tax_deductible) 
+    : expenses;
 
   return (
     <div className="h-full">
@@ -62,14 +69,16 @@ const Expenses = () => {
         <ExpenseFilter 
           searchTerm={searchTerm}
           categoryFilter={categoryFilter}
+          taxFilter={taxFilter}
           onSearchChange={setSearchTerm}
           onCategoryFilterChange={setCategoryFilter}
+          onTaxFilterChange={setTaxFilter}
         />
 
         <Card>
           <CardContent className="p-0">
             <ExpenseTable 
-              expenses={expenses}
+              expenses={filteredExpenses}
               isLoading={isLoading}
               onEditExpense={handleEditExpense}
               onDeleteExpense={handleDeleteExpense}

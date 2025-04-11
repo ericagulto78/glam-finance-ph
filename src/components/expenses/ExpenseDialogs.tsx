@@ -27,7 +27,7 @@ interface ExpenseDialogsProps {
   isDeleteDialogOpen: boolean;
   isLoading: boolean;
   newExpense: Partial<Expense>;
-  selectedExpense: Expense | null;
+  selectedExpense: Partial<Expense> | null;
   onAddDialogOpenChange: (open: boolean) => void;
   onEditDialogOpenChange: (open: boolean) => void;
   onDeleteDialogOpenChange: (open: boolean) => void;
@@ -70,7 +70,7 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
               <Label htmlFor="new-description">Description</Label>
               <Input 
                 id="new-description" 
-                value={newExpense.description}
+                value={newExpense.description || ''}
                 onChange={(e) => onNewExpenseChange('description', e.target.value)}
               />
             </div>
@@ -80,14 +80,14 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                 <Input 
                   id="new-date" 
                   type="date" 
-                  value={newExpense.date}
+                  value={newExpense.date || ''}
                   onChange={(e) => onNewExpenseChange('date', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-category">Category</Label>
                 <Select 
-                  value={newExpense.category} 
+                  value={newExpense.category || ''} 
                   onValueChange={(value) => onNewExpenseChange('category', value)}
                 >
                   <SelectTrigger id="new-category">
@@ -109,7 +109,7 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                 <Input 
                   id="new-amount" 
                   type="number" 
-                  value={newExpense.amount?.toString()}
+                  value={newExpense.amount?.toString() || '0'}
                   onChange={(e) => onNewExpenseChange('amount', parseInt(e.target.value) || 0)}
                 />
               </div>
@@ -117,7 +117,7 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="new-tax-deductible" 
-                    checked={newExpense.tax_deductible}
+                    checked={newExpense.tax_deductible || false}
                     onCheckedChange={(checked) => onNewExpenseChange('tax_deductible', !!checked)}
                   />
                   <label
@@ -160,7 +160,7 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                 <Label htmlFor="edit-description">Description</Label>
                 <Input 
                   id="edit-description" 
-                  value={selectedExpense.description}
+                  value={selectedExpense.description || ''}
                   onChange={(e) => onSelectedExpenseChange('description', e.target.value)}
                 />
               </div>
@@ -170,14 +170,14 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                   <Input 
                     id="edit-date" 
                     type="date" 
-                    value={selectedExpense.date}
+                    value={selectedExpense.date || ''}
                     onChange={(e) => onSelectedExpenseChange('date', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-category">Category</Label>
                   <Select 
-                    value={selectedExpense.category}
+                    value={selectedExpense.category || ''}
                     onValueChange={(value) => onSelectedExpenseChange('category', value)}
                   >
                     <SelectTrigger id="edit-category">
@@ -199,7 +199,7 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                   <Input 
                     id="edit-amount" 
                     type="number" 
-                    value={selectedExpense.amount.toString()}
+                    value={selectedExpense.amount?.toString() || '0'}
                     onChange={(e) => onSelectedExpenseChange('amount', parseInt(e.target.value) || 0)}
                   />
                 </div>
@@ -207,7 +207,7 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="edit-tax-deductible" 
-                      checked={selectedExpense.tax_deductible}
+                      checked={selectedExpense.tax_deductible || false}
                       onCheckedChange={(checked) => onSelectedExpenseChange('tax_deductible', !!checked)}
                     />
                     <label
