@@ -4,6 +4,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+export const ADMIN_EMAIL = 'admin@example.com'; // Add the missing export
 
 export type Json =
   | string
@@ -285,15 +286,15 @@ export interface Database {
         }
         Update: {
           amount?: number | null
-          created_at?: string
-          date?: string | null
-          description?: string | null
-          fromAccount?: string | null
-          id?: string
-          toAccount?: string | null
-          type?: string | null
-          updated_at?: string | null
-          user_id?: string | null
+          created_at: string
+          date: string | null
+          description: string | null
+          fromAccount: string | null
+          id: string
+          toAccount: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Relationships: [
           {
@@ -441,4 +442,59 @@ export const castInvoiceData = (data: any): Invoice => {
     updated_at: data.updated_at || '',
     description: data.description || '',
   };
+};
+
+// Helper function to cast BankAccount data
+export const castBankAccountData = (data: any): BankAccount => {
+  return {
+    id: data.id,
+    name: data.name || '',
+    type: data.type || '',
+    balance: data.balance || 0,
+    is_default: data.is_default || false,
+    user_id: data.user_id || '',
+    created_at: data.created_at || '',
+    updated_at: data.updated_at || '',
+    undeposited: data.undeposited || 0,
+    bank_name: data.bank_name || '',
+    account_name: data.account_name || '',
+    account_number: data.account_number || '',
+  };
+};
+
+// Helper function to cast Expense data
+export const castExpenseData = (data: any): Expense => {
+  return {
+    id: data.id,
+    description: data.description || '',
+    category: data.category || '',
+    amount: data.amount || 0,
+    date: data.date || '',
+    tax_deductible: data.tax_deductible || false,
+    is_monthly: data.is_monthly || false,
+    user_id: data.user_id || '',
+    created_at: data.created_at || '',
+    updated_at: data.updated_at || '',
+  };
+};
+
+// Helper function to cast Transaction data
+export const castTransactionData = (data: any): Transaction => {
+  return {
+    id: data.id,
+    type: data.type || 'deposit',
+    date: data.date || '',
+    description: data.description || '',
+    amount: data.amount || 0,
+    fromAccount: data.fromAccount || null,
+    toAccount: data.toAccount || null,
+    user_id: data.user_id || '',
+    created_at: data.created_at || '',
+    updated_at: data.updated_at || '',
+  };
+};
+
+// Helper function to check if a user is an admin
+export const isAdmin = (email: string | undefined): boolean => {
+  return email === ADMIN_EMAIL;
 };

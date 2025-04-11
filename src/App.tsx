@@ -1,6 +1,4 @@
 
-// Update only the ServiceTypes route in App.tsx
-
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
@@ -13,6 +11,7 @@ import Invoices from '@/pages/Invoices';
 import BankAccounts from '@/pages/BankAccounts';
 import BankAccount from '@/pages/BankAccount';
 import ServiceTypes from '@/pages/ServiceTypes';
+import Settings from '@/pages/Settings';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -35,6 +34,7 @@ function App() {
               <Route path="bank-accounts" element={<BankAccounts />} />
               <Route path="bank-account" element={<BankAccount />} />
               <Route path="service-types" element={<ServiceTypes />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
           <Toaster />

@@ -100,47 +100,35 @@ export function useBankTransactions() {
       
       // Update account balances
       if (newTransaction.type === 'deposit' && newTransaction.toAccount) {
-        const { error: depositError } = await supabase
-          .from('bank_accounts')
-          .update({ balance: supabase.rpc('increment_balance', { 
-            row_id: newTransaction.toAccount,
-            amount_to_add: newTransaction.amount
-          })})
-          .eq('id', newTransaction.toAccount);
+        const { error: depositError } = await supabase.rpc('increment_balance', { 
+          row_id: newTransaction.toAccount,
+          amount_to_add: newTransaction.amount
+        });
           
         if (depositError) throw depositError;
       }
       
       if (newTransaction.type === 'withdrawal' && newTransaction.fromAccount) {
-        const { error: withdrawalError } = await supabase
-          .from('bank_accounts')
-          .update({ balance: supabase.rpc('decrement_balance', {
-            row_id: newTransaction.fromAccount,
-            amount_to_subtract: newTransaction.amount  
-          })})
-          .eq('id', newTransaction.fromAccount);
+        const { error: withdrawalError } = await supabase.rpc('decrement_balance', {
+          row_id: newTransaction.fromAccount,
+          amount_to_subtract: newTransaction.amount  
+        });
           
         if (withdrawalError) throw withdrawalError;
       }
       
       if (newTransaction.type === 'transfer' && newTransaction.fromAccount && newTransaction.toAccount) {
-        const { error: fromError } = await supabase
-          .from('bank_accounts')
-          .update({ balance: supabase.rpc('decrement_balance', {
-            row_id: newTransaction.fromAccount,
-            amount_to_subtract: newTransaction.amount
-          })})
-          .eq('id', newTransaction.fromAccount);
+        const { error: fromError } = await supabase.rpc('decrement_balance', {
+          row_id: newTransaction.fromAccount,
+          amount_to_subtract: newTransaction.amount
+        });
           
         if (fromError) throw fromError;
         
-        const { error: toError } = await supabase
-          .from('bank_accounts')
-          .update({ balance: supabase.rpc('increment_balance', {
-            row_id: newTransaction.toAccount,
-            amount_to_add: newTransaction.amount
-          })})
-          .eq('id', newTransaction.toAccount);
+        const { error: toError } = await supabase.rpc('increment_balance', {
+          row_id: newTransaction.toAccount,
+          amount_to_add: newTransaction.amount
+        });
           
         if (toError) throw toError;
       }
