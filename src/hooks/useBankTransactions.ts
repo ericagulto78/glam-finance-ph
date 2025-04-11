@@ -1,59 +1,40 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase, Transaction, castTransaction } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase, TransactionType } from '@/integrations/supabase/client';
 
-export interface TransactionFormData {
-  id?: string;
-  date: string;
-  type: TransactionType;
-  description: string;
-  amount: number;
-  fromAccount: string | null;
-  toAccount: string | null;
-}
-
-export function useBankTransactions() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+export const useBankTransactions = (bankAccountId?: string) => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
-
-  const initialTransactionState: TransactionFormData = {
-    date: today,
-    type: 'deposit',
-    description: '',
-    amount: 0,
-    fromAccount: null,
-    toAccount: null
-  };
-
-  const [newTransaction, setNewTransaction] = useState<TransactionFormData>(initialTransactionState);
+  useEffect(() => {
+    if (bankAccountId) {
+      fetchTransactions();
+    } else {
+      setTransactions([]);
+      setIsLoading(false);
+    }
+  }, [bankAccountId]);
 
   const fetchTransactions = async () => {
-    if (!user) return;
+    if (!bankAccountId) return;
     
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('bank_account_id', bankAccountId)
         .order('date', { ascending: false });
 
       if (error) throw error;
       
-      setTransactions(data || []);
+      setTransactions(data.map(castTransaction));
     } catch (error: any) {
-      console.error('Error fetching transactions:', error);
       toast({
         title: "Error fetching transactions",
-        description: error.message,
+        description: error.message || "An error occurred while fetching transactions",
         variant: "destructive",
       });
     } finally {
@@ -61,110 +42,61 @@ export function useBankTransactions() {
     }
   };
 
-  const addTransaction = async () => {
-    if (!user) return;
-    
+  const createTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
     setIsLoading(true);
     try {
-      // Validate transaction data
-      if (newTransaction.type === 'deposit' && !newTransaction.toAccount) {
-        throw new Error('Please select a destination account');
+      // Use the RPC function to increment or decrement the balance based on transaction type
+      if (transactionData.type === 'deposit') {
+        const { data: balanceData, error: balanceError } = await supabase
+          .rpc('increment_balance', { 
+            row_id: transactionData.bank_account_id, 
+            amount_to_add: transactionData.amount 
+          });
+          
+        if (balanceError) throw balanceError;
+      } else {
+        const { data: balanceData, error: balanceError } = await supabase
+          .rpc('decrement_balance', { 
+            row_id: transactionData.bank_account_id, 
+            amount_to_subtract: transactionData.amount 
+          });
+          
+        if (balanceError) throw balanceError;
       }
-      
-      if (newTransaction.type === 'withdrawal' && !newTransaction.fromAccount) {
-        throw new Error('Please select a source account');
-      }
-      
-      if (newTransaction.type === 'transfer' && (!newTransaction.fromAccount || !newTransaction.toAccount)) {
-        throw new Error('Please select both source and destination accounts');
-      }
-      
-      if (newTransaction.amount <= 0) {
-        throw new Error('Amount must be greater than zero');
-      }
-      
-      // Insert transaction
-      const { error: transactionError } = await supabase
+
+      // Create the transaction record
+      const { data, error } = await supabase
         .from('transactions')
         .insert([{
-          date: newTransaction.date,
-          type: newTransaction.type,
-          description: newTransaction.description,
-          amount: newTransaction.amount,
-          fromAccount: newTransaction.fromAccount,
-          toAccount: newTransaction.toAccount,
-          user_id: user.id
-        }]);
+          ...transactionData,
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        }])
+        .select()
+        .single();
 
-      if (transactionError) throw transactionError;
+      if (error) throw error;
       
-      // Update account balances
-      if (newTransaction.type === 'deposit' && newTransaction.toAccount) {
-        const { error: depositError } = await supabase.rpc('increment_balance', { 
-          row_id: newTransaction.toAccount,
-          amount_to_add: newTransaction.amount
-        });
-          
-        if (depositError) throw depositError;
-      }
+      setTransactions(prevTransactions => 
+        [castTransaction(data), ...prevTransactions]
+      );
       
-      if (newTransaction.type === 'withdrawal' && newTransaction.fromAccount) {
-        const { error: withdrawalError } = await supabase.rpc('decrement_balance', {
-          row_id: newTransaction.fromAccount,
-          amount_to_subtract: newTransaction.amount  
-        });
-          
-        if (withdrawalError) throw withdrawalError;
-      }
-      
-      if (newTransaction.type === 'transfer' && newTransaction.fromAccount && newTransaction.toAccount) {
-        const { error: fromError } = await supabase.rpc('decrement_balance', {
-          row_id: newTransaction.fromAccount,
-          amount_to_subtract: newTransaction.amount
-        });
-          
-        if (fromError) throw fromError;
-        
-        const { error: toError } = await supabase.rpc('increment_balance', {
-          row_id: newTransaction.toAccount,
-          amount_to_add: newTransaction.amount
-        });
-          
-        if (toError) throw toError;
-      }
-      
-      toast({
-        title: "Transaction processed",
-        description: `Your ${newTransaction.type} transaction has been processed successfully.`,
-      });
-      
-      setNewTransaction(initialTransactionState);
-      setIsAddDialogOpen(false);
-      await fetchTransactions();
+      return { success: true, data: castTransaction(data) };
     } catch (error: any) {
-      console.error('Error processing transaction:', error);
       toast({
-        title: "Error processing transaction",
-        description: error.message,
+        title: "Error creating transaction",
+        description: error.message || "An error occurred while creating the transaction",
         variant: "destructive",
       });
+      return { success: false, error };
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleNewTransactionChange = (field: string, value: any) => {
-    setNewTransaction(prev => ({ ...prev, [field]: value }));
   };
 
   return {
     transactions,
-    newTransaction,
     isLoading,
-    isAddDialogOpen,
-    setIsAddDialogOpen,
-    fetchTransactions,
-    addTransaction,
-    handleNewTransactionChange,
+    createTransaction,
+    fetchTransactions
   };
-}
+};

@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
@@ -6,8 +7,9 @@ import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
 import Expenses from "./pages/Expenses";
 import Invoices from "./pages/Invoices";
-import Taxes from "./pages/Taxes";
+import BankAccounts from "./pages/BankAccounts";
 import BankAccount from "./pages/BankAccount";
+import ServiceTypes from "./pages/ServiceTypes";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -46,17 +48,24 @@ const AppRoutes = () => (
         </MainLayout>
       </ProtectedRoute>
     } />
-    <Route path="/taxes" element={
-      <ProtectedRoute>
-        <MainLayout>
-          <Taxes />
-        </MainLayout>
-      </ProtectedRoute>
-    } />
     <Route path="/bank-accounts" element={
       <ProtectedRoute>
         <MainLayout>
+          <BankAccounts />
+        </MainLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/bank-account" element={
+      <ProtectedRoute>
+        <MainLayout>
           <BankAccount />
+        </MainLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/service-types" element={
+      <ProtectedRoute>
+        <MainLayout>
+          <ServiceTypes />
         </MainLayout>
       </ProtectedRoute>
     } />

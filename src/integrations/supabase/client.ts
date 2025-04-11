@@ -7,6 +7,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1N
 export const supabase = createClient(supabaseUrl, supabaseKey);
 export const ADMIN_EMAIL = 'admin@example.com';
 
+// Supabase types
 export type Json =
   | string
   | number
@@ -20,46 +21,46 @@ export interface Database {
     Tables: {
       bank_accounts: {
         Row: {
+          account_name: string | null
+          account_number: string | null
           balance: number | null
+          bank_name: string | null
           created_at: string
           id: string
           is_default: boolean | null
           name: string | null
           type: string | null
-          updated_at: string | null
-          user_id: string | null
           undeposited: number | null
-          bank_name: string | null
-          account_name: string | null
-          account_number: string | null
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
+          account_name?: string | null
+          account_number?: string | null
           balance?: number | null
+          bank_name?: string | null
           created_at?: string
           id?: string
           is_default?: boolean | null
           name?: string | null
           type?: string | null
-          updated_at?: string | null
-          user_id?: string | null
           undeposited?: number | null
-          bank_name?: string | null
-          account_name?: string | null
-          account_number?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
+          account_name?: string | null
+          account_number?: string | null
           balance?: number | null
+          bank_name?: string | null
           created_at?: string
           id?: string
           is_default?: boolean | null
           name?: string | null
           type?: string | null
-          updated_at?: string | null
-          user_id?: string | null
           undeposited?: number | null
-          bank_name?: string | null
-          account_name?: string | null
-          account_number?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -74,7 +75,7 @@ export interface Database {
         Row: {
           amount: number | null
           client: string | null
-          created_at: string | null
+          created_at: string
           date: string | null
           id: string
           location: string | null
@@ -83,13 +84,13 @@ export interface Database {
           service_details: string | null
           status: string | null
           time: string | null
-          updated_at: string | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
           amount?: number | null
           client?: string | null
-          created_at?: string | null
+          created_at?: string
           date?: string | null
           id?: string
           location?: string | null
@@ -98,13 +99,13 @@ export interface Database {
           service_details?: string | null
           status?: string | null
           time?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
           amount?: number | null
           client?: string | null
-          created_at?: string | null
+          created_at?: string
           date?: string | null
           id?: string
           location?: string | null
@@ -113,7 +114,7 @@ export interface Database {
           service_details?: string | null
           status?: string | null
           time?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -129,38 +130,38 @@ export interface Database {
         Row: {
           amount: number | null
           category: string | null
-          created_at: string | null
+          created_at: string
           date: string | null
-          description: string | null
           id: string
-          updated_at: string | null
-          user_id: string | null
-          tax_deductible: boolean | null
           is_monthly: boolean | null
+          name: string | null
+          tax_deductible: boolean | null
+          updated_at: string
+          user_id: string | null
         }
         Insert: {
           amount?: number | null
           category?: string | null
-          created_at?: string | null
+          created_at?: string
           date?: string | null
-          description?: string | null
           id?: string
-          updated_at?: string | null
-          user_id?: string | null
-          tax_deductible?: boolean | null
           is_monthly?: boolean | null
+          name?: string | null
+          tax_deductible?: boolean | null
+          updated_at?: string
+          user_id?: string | null
         }
         Update: {
           amount?: number | null
           category?: string | null
-          created_at?: string | null
+          created_at?: string
           date?: string | null
-          description?: string | null
           id?: string
-          updated_at?: string | null
-          user_id?: string | null
-          tax_deductible?: boolean | null
           is_monthly?: boolean | null
+          name?: string | null
+          tax_deductible?: boolean | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -177,48 +178,51 @@ export interface Database {
           bank_account_id: string | null
           booking_id: string | null
           client: string | null
-          created_at: string | null
+          created_at: string
           due_date: string | null
+          email: string | null
           id: string
           invoice_number: string | null
           issue_date: string | null
+          notes: string | null
           payment_method: string | null
           status: string | null
-          updated_at: string | null
+          updated_at: string
           user_id: string | null
-          description: string | null
         }
         Insert: {
           amount?: number | null
           bank_account_id?: string | null
           booking_id?: string | null
           client?: string | null
-          created_at?: string | null
+          created_at?: string
           due_date?: string | null
+          email?: string | null
           id?: string
           invoice_number?: string | null
           issue_date?: string | null
+          notes?: string | null
           payment_method?: string | null
           status?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string | null
-          description?: string | null
         }
         Update: {
           amount?: number | null
           bank_account_id?: string | null
           booking_id?: string | null
           client?: string | null
-          created_at?: string | null
+          created_at?: string
           due_date?: string | null
+          email?: string | null
           id?: string
           invoice_number?: string | null
           issue_date?: string | null
+          notes?: string | null
           payment_method?: string | null
           status?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string | null
-          description?: string | null
         }
         Relationships: [
           {
@@ -243,27 +247,33 @@ export interface Database {
       }
       service_types: {
         Row: {
-          created_at: string | null
-          default_price: number | null
+          created_at: string
+          description: string | null
+          duration: number | null
           id: string
           name: string | null
-          updated_at: string | null
+          price: number | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
-          created_at?: string | null
-          default_price?: number | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
           id?: string
           name?: string | null
-          updated_at?: string | null
+          price?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
-          created_at?: string | null
-          default_price?: number | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
           id?: string
           name?: string | null
-          updated_at?: string | null
+          price?: number | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -278,50 +288,41 @@ export interface Database {
       transactions: {
         Row: {
           amount: number | null
+          bank_account_id: string | null
           created_at: string
           date: string | null
           description: string | null
-          fromAccount: string | null
           id: string
-          toAccount: string | null
           type: string | null
-          updated_at: string | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
           amount?: number | null
+          bank_account_id?: string | null
           created_at?: string
           date?: string | null
           description?: string | null
-          fromAccount?: string | null
           id?: string
-          toAccount?: string | null
           type?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
           amount?: number | null
-          created_at: string
-          date: string | null
-          description: string | null
-          fromAccount: string | null
-          id: string
-          toAccount: string | null
-          type: string | null
-          updated_at: string | null
-          user_id: string | null
+          bank_account_id?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          type?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_fromAccount_fkey"
-            columns: ["fromAccount"]
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_toAccount_fkey"
-            columns: ["toAccount"]
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
             referencedRelation: "bank_accounts"
             referencedColumns: ["id"]
           },
@@ -333,24 +334,58 @@ export interface Database {
           }
         ]
       }
+      user_profiles: {
+        Row: {
+          approved: boolean | null
+          created_at: string
+          id: string
+          rejection_reason: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          created_at?: string
+          id?: string
+          rejection_reason?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          created_at?: string
+          id?: string
+          rejection_reason?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      increment_balance: {
-        Args: {
-          row_id: string
-          amount_to_add: number
-        }
-        Returns: string
-      }
       decrement_balance: {
         Args: {
           row_id: string
           amount_to_subtract: number
         }
-        Returns: string
+        Returns: undefined
+      }
+      increment_balance: {
+        Args: {
+          row_id: string
+          amount_to_add: number
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -362,162 +397,192 @@ export interface Database {
   }
 }
 
-export type Tables<
-  PublicTableNameOrOptions extends
-  | keyof (Database["public"]["Tables"] & { _: never })
-  | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-  ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] & { _: never })
-  : never = never
-  > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] & { _: never })[TableName]["Row"]
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] & { _: never })
-  ? (Database["public"]["Tables"][PublicTableNameOrOptions] & { _: never })["Row"]
-  : never
+// Create TypeScript types for our database tables
+export interface BankAccount {
+  id: string;
+  name: string;
+  type: string;
+  balance: number;
+  is_default: boolean;
+  undeposited: number;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
 
-export type TableInsert<
-  PublicTableNameOrOptions extends
-  | keyof (Database["public"]["Tables"] & { _: never })
-  | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-  ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] & { _: never })
-  : never = never
-  > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] & { _: never })[TableName]["Insert"]
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] & { _: never })
-  ? (Database["public"]["Tables"][PublicTableNameOrOptions] & { _: never })["Insert"]
-  : never
+// Helper function to cast database types to our interface
+export const castBankAccount = (data: any): BankAccount => ({
+  id: data.id,
+  name: data.name,
+  type: data.type,
+  balance: data.balance || 0,
+  is_default: data.is_default || false,
+  undeposited: data.undeposited || 0,
+  bank_name: data.bank_name || '',
+  account_name: data.account_name || '',
+  account_number: data.account_number || '',
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
+});
 
-export type TableUpdate<
-  PublicTableNameOrOptions extends
-  | keyof (Database["public"]["Tables"] & { _: never })
-  | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-  ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] & { _: never })
-  : never = never
-  > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] & { _: never })[TableName]["Update"]
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] & { _: never })
-  ? (Database["public"]["Tables"][PublicTableNameOrOptions] & { _: never })["Update"]
-  : never
+export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
 
-export type BankAccount = Tables<'bank_accounts'>;
-export type Booking = Tables<'bookings'>;
-export type Expense = Tables<'expenses'>;
+export interface Booking {
+  id: string;
+  client: string;
+  service: string;
+  service_details: string;
+  date: string;
+  time: string;
+  location: string;
+  amount: number;
+  reservation_fee: number;
+  status: BookingStatus;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
+// Helper function to cast database types to our interface
+export const castBooking = (data: any): Booking => ({
+  id: data.id,
+  client: data.client,
+  service: data.service,
+  service_details: data.service_details || '',
+  date: data.date,
+  time: data.time,
+  location: data.location || '',
+  amount: data.amount || 0,
+  reservation_fee: data.reservation_fee || 0,
+  status: data.status as BookingStatus,
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
+});
+
+export type ExpenseCategory = 'supplies' | 'equipment' | 'travel' | 'rent' | 'utilities' | 'marketing' | 'professional' | 'insurance' | 'taxes' | 'other';
+
+export interface Expense {
+  id: string;
+  name: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string;
+  tax_deductible: boolean;
+  is_monthly: boolean;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
+// Helper function to cast database types to our interface
+export const castExpense = (data: any): Expense => ({
+  id: data.id,
+  name: data.name,
+  amount: data.amount || 0,
+  category: data.category as ExpenseCategory,
+  date: data.date,
+  tax_deductible: data.tax_deductible || false,
+  is_monthly: data.is_monthly || false,
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
+});
+
+export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+export type PaymentMethod = 'card' | 'cash' | 'bank_transfer' | 'check' | 'unpaid';
+
 export interface Invoice {
   id: string;
   invoice_number: string;
   client: string;
+  email: string;
   issue_date: string;
   due_date: string;
   amount: number;
   status: InvoiceStatus;
   payment_method: PaymentMethod;
-  bank_account_id?: string | null;
-  booking_id?: string | null;
+  bank_account_id: string | null;
+  booking_id: string | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
   user_id: string;
-  created_at?: string;
-  updated_at?: string;
-  description?: string;
 }
-export type ServiceType = Tables<'service_types'>;
-export type Transaction = Tables<'transactions'>;
 
-export type BookingStatus = 'upcoming' | 'completed' | 'cancelled';
-export type InvoiceStatus = 'pending' | 'paid' | 'overdue';
-export type PaymentMethod = 'cash' | 'bank' | 'unpaid';
-export type TransactionType = 'deposit' | 'withdrawal' | 'transfer';
+// Helper function to cast database types to our interface
+export const castInvoice = (data: any): Invoice => ({
+  id: data.id,
+  invoice_number: data.invoice_number,
+  client: data.client,
+  email: data.email || '',
+  issue_date: data.issue_date,
+  due_date: data.due_date,
+  amount: data.amount || 0,
+  status: data.status as InvoiceStatus,
+  payment_method: data.payment_method as PaymentMethod,
+  bank_account_id: data.bank_account_id,
+  booking_id: data.booking_id,
+  notes: data.notes || '',
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
+});
 
-// Helper function to cast Booking data
-export const castBookingData = (data: any): Booking => {
-  return {
-    id: data.id,
-    client: data.client || '',
-    service: data.service || '',
-    date: data.date || '',
-    time: data.time || '',
-    location: data.location || '',
-    amount: data.amount || 0,
-    status: data.status || 'upcoming',
-    reservation_fee: data.reservation_fee || 0,
-    user_id: data.user_id || '',
-    created_at: data.created_at || '',
-    updated_at: data.updated_at || '',
-    service_details: data.service_details || null,
-  };
-};
+export interface ServiceType {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
 
-// Helper function to cast Invoice data
-export const castInvoiceData = (data: any): Invoice => {
-  return {
-    id: data.id,
-    invoice_number: data.invoice_number || '',
-    client: data.client || '',
-    issue_date: data.issue_date || '',
-    due_date: data.due_date || '',
-    amount: data.amount || 0,
-    status: data.status || 'pending',
-    payment_method: data.payment_method || 'unpaid',
-    bank_account_id: data.bank_account_id || null,
-    booking_id: data.booking_id || null,
-    user_id: data.user_id || '',
-    created_at: data.created_at || '',
-    updated_at: data.updated_at || '',
-    description: data.description || '',
-  };
-};
+// Helper function to cast database types to our interface
+export const castServiceType = (data: any): ServiceType => ({
+  id: data.id,
+  name: data.name,
+  description: data.description || '',
+  price: data.price || 0,
+  duration: data.duration || 60,
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
+});
 
-// Helper function to cast BankAccount data
-export const castBankAccountData = (data: any): BankAccount => {
-  return {
-    id: data.id,
-    name: data.name || '',
-    type: data.type || '',
-    balance: data.balance || 0,
-    is_default: data.is_default || false,
-    user_id: data.user_id || '',
-    created_at: data.created_at || '',
-    updated_at: data.updated_at || '',
-    undeposited: data.undeposited || 0,
-    bank_name: data.bank_name || '',
-    account_name: data.account_name || '',
-    account_number: data.account_number || '',
-  };
-};
+export interface Transaction {
+  id: string;
+  bank_account_id: string;
+  amount: number;
+  type: 'deposit' | 'withdrawal';
+  description: string;
+  date: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
 
-// Helper function to cast Expense data
-export const castExpenseData = (data: any): Expense => {
-  return {
-    id: data.id,
-    description: data.description || '',
-    category: data.category || '',
-    amount: data.amount || 0,
-    date: data.date || '',
-    tax_deductible: data.tax_deductible || false,
-    is_monthly: data.is_monthly || false,
-    user_id: data.user_id || '',
-    created_at: data.created_at || '',
-    updated_at: data.updated_at || '',
-  };
-};
+// Helper function to cast database types to our interface
+export const castTransaction = (data: any): Transaction => ({
+  id: data.id,
+  bank_account_id: data.bank_account_id,
+  amount: data.amount || 0,
+  type: data.type as 'deposit' | 'withdrawal',
+  description: data.description || '',
+  date: data.date,
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
+});
 
-// Helper function to cast Transaction data
-export const castTransactionData = (data: any): Transaction => {
-  return {
-    id: data.id,
-    type: data.type || 'deposit',
-    date: data.date || '',
-    description: data.description || '',
-    amount: data.amount || 0,
-    fromAccount: data.fromAccount || null,
-    toAccount: data.toAccount || null,
-    user_id: data.user_id || '',
-    created_at: data.created_at || '',
-    updated_at: data.updated_at || '',
-  };
-};
-
-// Helper function to check if a user is an admin
-export const isAdmin = (email: string | undefined): boolean => {
+// Function to check if a user is an admin
+export const isAdmin = (email: string | undefined | null): boolean => {
+  if (!email) return false;
   return email === ADMIN_EMAIL;
 };
