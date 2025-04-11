@@ -224,8 +224,41 @@ export function useInvoices() {
       
       // If this was a cash payment, we need to update the undeposited funds
       if (paymentMethod === 'cash') {
+        // Update the undeposited amount in the first default bank account or create one
+        const { data: bankAccounts } = await supabase
+          .from('bank_accounts')
+          .select('*')
+          .eq('is_default', true)
+          .limit(1);
+        
+        if (bankAccounts && bankAccounts.length > 0) {
+          // Update the undeposited funds in the default account
+          await supabase
+            .from('bank_accounts')
+            .update({
+              undeposited: (bankAccounts[0].undeposited || 0) + selectedInvoice.amount
+            })
+            .eq('id', bankAccounts[0].id);
+        } else {
+          // Fetch any bank account
+          const { data: anyBankAccount } = await supabase
+            .from('bank_accounts')
+            .select('*')
+            .limit(1);
+            
+          if (anyBankAccount && anyBankAccount.length > 0) {
+            // Update the undeposited funds in the first available account
+            await supabase
+              .from('bank_accounts')
+              .update({
+                undeposited: (anyBankAccount[0].undeposited || 0) + selectedInvoice.amount
+              })
+              .eq('id', anyBankAccount[0].id);
+          }
+        }
+        
         // Create a transaction for the cash payment
-        await (supabase as any)
+        await supabase
           .from('transactions')
           .insert([{
             date: new Date().toISOString().split('T')[0],
@@ -240,35 +273,24 @@ export function useInvoices() {
       
       // If this was a bank payment, we need to update the bank account balance
       if (paymentMethod === 'bank' && bankAccountId) {
-        // Get the bank account
-        const { data: bankData } = await supabase
-          .from('bank_accounts')
-          .select('*')
-          .eq('id', bankAccountId)
-          .single();
-          
-        if (bankData) {
-          // Update the bank account balance
-          await supabase
-            .from('bank_accounts')
-            .update({
-              balance: (bankData.balance || 0) + selectedInvoice.amount,
-            })
-            .eq('id', bankAccountId);
+        // Update the bank account balance using the RPC function
+        await supabase.rpc('increment_balance', {
+          row_id: bankAccountId,
+          amount_to_add: selectedInvoice.amount
+        });
             
-          // Create a transaction for the bank deposit
-          await (supabase as any)
-            .from('transactions')
-            .insert([{
-              date: new Date().toISOString().split('T')[0],
-              type: 'deposit',
-              description: `Bank deposit for invoice ${selectedInvoice.invoice_number}`,
-              amount: selectedInvoice.amount,
-              fromAccount: null,
-              toAccount: bankAccountId,
-              user_id: user.id,
-            }]);
-        }
+        // Create a transaction for the bank deposit
+        await supabase
+          .from('transactions')
+          .insert([{
+            date: new Date().toISOString().split('T')[0],
+            type: 'deposit',
+            description: `Bank deposit for invoice ${selectedInvoice.invoice_number}`,
+            amount: selectedInvoice.amount,
+            fromAccount: null,
+            toAccount: bankAccountId,
+            user_id: user.id,
+          }]);
       }
       
       setIsProcessPaymentDialogOpen(false);

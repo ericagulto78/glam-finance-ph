@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Booking } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from 'react';
+import { Booking, supabase } from '@/integrations/supabase/client';
 import {
   Table,
   TableBody,
@@ -16,8 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { useInvoices } from '@/hooks/useInvoices';
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -34,6 +36,57 @@ const BookingTable: React.FC<BookingTableProps> = ({
   onEditBooking,
   onDeleteBooking,
 }) => {
+  const [bookingInvoices, setBookingInvoices] = useState<Record<string, string>>({});
+  const { toast } = useToast();
+  const { addBookingInvoice } = useInvoices();
+
+  useEffect(() => {
+    if (bookings.length > 0) {
+      fetchInvoiceNumbers();
+    }
+  }, [bookings]);
+
+  const fetchInvoiceNumbers = async () => {
+    try {
+      const bookingIds = bookings.map(booking => booking.id);
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('booking_id, invoice_number')
+        .in('booking_id', bookingIds);
+
+      if (error) throw error;
+
+      const invoiceMap: Record<string, string> = {};
+      data.forEach(invoice => {
+        if (invoice.booking_id) {
+          invoiceMap[invoice.booking_id] = invoice.invoice_number;
+        }
+      });
+
+      setBookingInvoices(invoiceMap);
+    } catch (error) {
+      console.error('Error fetching invoice numbers:', error);
+    }
+  };
+
+  const handleCreateInvoice = async (e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    try {
+      await addBookingInvoice(booking);
+      await fetchInvoiceNumbers(); // Refresh invoice data
+      toast({
+        title: "Invoice Created",
+        description: "Invoice has been successfully created for this booking.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invoice",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'upcoming':
@@ -73,6 +126,7 @@ const BookingTable: React.FC<BookingTableProps> = ({
           <TableHead>Date</TableHead>
           <TableHead>Time</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Invoice</TableHead>
           <TableHead className="text-right">Amount</TableHead>
           <TableHead className="w-[100px] text-right">Actions</TableHead>
         </TableRow>
@@ -85,6 +139,23 @@ const BookingTable: React.FC<BookingTableProps> = ({
             <TableCell>{formatDate(booking.date)}</TableCell>
             <TableCell>{booking.time}</TableCell>
             <TableCell>{getStatusBadge(booking.status)}</TableCell>
+            <TableCell>
+              {bookingInvoices[booking.id] ? (
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  #{bookingInvoices[booking.id]}
+                </Badge>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={(e) => handleCreateInvoice(e, booking)}
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <FileText size={14} />
+                  Create Invoice
+                </Button>
+              )}
+            </TableCell>
             <TableCell className="text-right">₱{booking.amount.toLocaleString()}</TableCell>
             <TableCell className="text-right">
               <DropdownMenu>

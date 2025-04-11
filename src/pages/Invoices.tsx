@@ -141,7 +141,7 @@ const Invoices = () => {
       setInvoices(prevInvoices =>
         prevInvoices.map(invoice => (invoice.id === invoiceData.id ? data as Invoice : invoice))
       );
-      setIsEditModalOpen(false);
+      setIsViewModalOpen(false);
       toast({
         title: "Invoice updated",
         description: `Invoice #${data.invoice_number} has been successfully updated.`,
@@ -344,6 +344,7 @@ const Invoices = () => {
                 setIsViewModalOpen(false);
                 setIsPaymentModalOpen(true);
               }}
+              onUpdateInvoice={handleUpdateInvoice}
             />
           </DialogContent>
         </Dialog>
