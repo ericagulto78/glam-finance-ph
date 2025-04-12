@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,7 @@ interface BookingStore {
   setIsEditDialogOpen: (isOpen: boolean) => void;
   setIsDeleteDialogOpen: (isOpen: boolean) => void;
   setIsViewDialogOpen: (isOpen: boolean) => void;
+  setIsLoading: (isLoading: boolean) => void; // Added missing action
   
   // Form handlers
   handleNewBookingChange: (field: string, value: any) => void;
@@ -90,6 +92,7 @@ export const useBookingsStore = create<BookingStore>((set, get) => ({
   setIsEditDialogOpen: (isOpen) => set({ isEditDialogOpen: isOpen }),
   setIsDeleteDialogOpen: (isOpen) => set({ isDeleteDialogOpen: isOpen }),
   setIsViewDialogOpen: (isOpen) => set({ isViewDialogOpen: isOpen }),
+  setIsLoading: (isLoading) => set({ isLoading }), // Added missing action implementation
   
   // Form handlers
   handleNewBookingChange: (field, value) => {
