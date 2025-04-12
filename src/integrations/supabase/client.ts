@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use import.meta.env instead of process.env for Vite applications
@@ -129,6 +128,7 @@ export interface Invoice {
   created_at: string;
   updated_at: string;
   user_id: string;
+  description?: string; // Added description field
 }
 
 // Helper function to cast database types to our interface
@@ -147,7 +147,8 @@ export const castInvoice = (data: any): Invoice => ({
   notes: data.notes || '',
   created_at: data.created_at,
   updated_at: data.updated_at,
-  user_id: data.user_id
+  user_id: data.user_id,
+  description: data.description || ''
 });
 
 export interface ServiceType {

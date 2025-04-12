@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -160,8 +159,7 @@ export function useBookings() {
       
       // Cast the data to ensure it matches our Booking type
       const typedBookings = data?.map(booking => castBooking(booking)) || [];
-      store.bookings = typedBookings;
-      set(store, { bookings: typedBookings });
+      useBookingsStore.setState({ bookings: typedBookings });
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       toast({
