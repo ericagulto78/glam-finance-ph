@@ -82,6 +82,7 @@ export const BookingDialogs: React.FC<BookingDialogsProps> = ({
     if (!selectedBooking) return;
     
     try {
+      // Remove description field when creating invoice from booking
       await addBookingInvoice(selectedBooking);
       setHasInvoice(true);
     } catch (error) {

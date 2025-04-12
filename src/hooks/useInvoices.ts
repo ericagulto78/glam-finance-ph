@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +24,6 @@ export interface InvoiceFormData {
   bank_account_id: string | null;
   booking_id: string | null;
   notes: string;
-  description?: string;
 }
 
 export function useInvoices() {
@@ -51,8 +51,7 @@ export function useInvoices() {
     payment_method: 'unpaid',
     bank_account_id: null,
     booking_id: null,
-    notes: '',
-    description: ''
+    notes: ''
   };
   
   const [newInvoice, setNewInvoice] = useState<InvoiceFormData>(initialInvoiceState);
@@ -116,7 +115,6 @@ export function useInvoices() {
         bank_account_id: newInvoice.bank_account_id,
         booking_id: newInvoice.booking_id,
         notes: newInvoice.notes,
-        description: newInvoice.description,
         user_id: user.id,
       };
 
@@ -167,8 +165,7 @@ export function useInvoices() {
           payment_method: selectedInvoice.payment_method,
           bank_account_id: selectedInvoice.bank_account_id,
           booking_id: selectedInvoice.booking_id,
-          notes: selectedInvoice.notes,
-          description: selectedInvoice.description
+          notes: selectedInvoice.notes
         })
         .eq('id', selectedInvoice.id);
 
@@ -274,7 +271,6 @@ export function useInvoices() {
         bank_account_id: null,
         booking_id: booking.id,
         notes: `Invoice for ${booking.service} service on ${booking.date} at ${booking.time}`,
-        description: booking.service,
         user_id: user.id,
       };
 
