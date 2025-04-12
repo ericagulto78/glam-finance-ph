@@ -2,17 +2,25 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { calculatePhilippineTax } from '@/lib/tax-calculations';
+import { calculatePhilippineTax, calculatePhilippineGraduatedTax } from '@/lib/tax-calculations';
 
 const TaxSummary: React.FC = () => {
   // Use more realistic income values that would make sense for a freelancer
   const annualIncome = 450000; // Estimated annual income
-  const { taxDue, isExempt } = calculatePhilippineTax(annualIncome);
+  
+  // Calculate taxes using both methods
+  const flatRateTax = calculatePhilippineTax(annualIncome);
+  const graduatedTax = calculatePhilippineGraduatedTax(annualIncome);
+  
+  // Choose the better method (lower tax) for display
+  const lowerTaxMethod = flatRateTax.taxDue <= graduatedTax.taxDue ? 'flat' : 'graduated';
+  const { taxDue, isExempt } = lowerTaxMethod === 'flat' ? flatRateTax : graduatedTax;
+  const taxMethodName = lowerTaxMethod === 'flat' ? '8% Flat Rate' : 'Graduated Rates';
   
   // Only show tax items if not exempt
   const taxItems = !isExempt ? [
     {
-      name: 'Income Tax (8% Flat Rate)',
+      name: `Income Tax (${taxMethodName})`,
       amount: taxDue,
       dueDate: '2025-04-15',
       progress: 65,
@@ -37,7 +45,7 @@ const TaxSummary: React.FC = () => {
           <div className="py-8 text-center">
             <h3 className="text-lg font-medium text-green-600 mb-2">Tax Exempt</h3>
             <p className="text-muted-foreground">
-              Your estimated annual income is below ₱250,000, making you exempt from income tax under the 8% flat rate option.
+              Your estimated annual income is below ₱250,000, making you exempt from income tax.
             </p>
           </div>
         ) : (

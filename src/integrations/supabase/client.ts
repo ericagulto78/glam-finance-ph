@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Use import.meta.env instead of process.env for Vite applications
@@ -88,7 +89,7 @@ export interface Expense {
   date: string;
   tax_deductible: boolean;
   is_monthly: boolean;
-  description: string; // Added description field
+  description: string;
   created_at: string;
   updated_at: string;
   user_id: string;

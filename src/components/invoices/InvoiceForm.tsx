@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { InvoiceStatus, PaymentMethod } from '@/integrations/supabase/client';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
+import { Textarea } from '@/components/ui/textarea';
 
 export interface InvoiceFormData {
   id?: string;
@@ -24,6 +26,7 @@ export interface InvoiceFormData {
   bank_account_id?: string | null;
   booking_id?: string | null;
   description?: string;
+  notes?: string;
 }
 
 interface InvoiceFormProps {
@@ -166,6 +169,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           </Select>
         </div>
       )}
+      
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description || ''}
+          onChange={(e) => onFormChange('description', e.target.value)}
+          placeholder="Enter invoice description or service details"
+          rows={3}
+        />
+      </div>
       
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={onCancel}>

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, DollarSign, TrendingUp, UserCheck } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, UserCheck, Calculator } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import StatCard from '@/components/dashboard/StatCard';
 import BookingsList from '@/components/dashboard/BookingsList';
@@ -10,6 +11,7 @@ import TaxSummary from '@/components/dashboard/TaxSummary';
 import EarningsGraph from '@/components/dashboard/EarningsGraph';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -130,7 +132,17 @@ const Dashboard = () => {
         {/* Bottom row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ExpensesByCategory />
-          <TaxSummary />
+          <div className="relative">
+            <TaxSummary />
+            <div className="absolute top-6 right-6">
+              <Link to="/taxes">
+                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                  <Calculator size={16} />
+                  <span>Tax Planner</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
