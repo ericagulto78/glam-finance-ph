@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +35,7 @@ interface ServiceLineItem {
   serviceName: string;
   persons: number;
   price: number;
+  customPrice?: boolean;
 }
 
 interface BookingFormProps {
@@ -70,7 +70,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
         serviceId: '',
         serviceName: '',
         persons: 1,
-        price: 0
+        price: 0,
+        customPrice: false
       }]);
     }
   }, [serviceTypes]);
@@ -87,7 +88,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
         ...updatedLineItems[index],
         serviceId: selectedType.id,
         serviceName: selectedType.name,
-        price: selectedType.default_price
+        price: selectedType.default_price,
+        customPrice: false
       };
       setLineItems(updatedLineItems);
       
@@ -109,12 +111,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
     calculateTotalAmount(updatedLineItems);
   };
 
+  const handlePriceChange = (price: number, index: number) => {
+    const updatedLineItems = [...lineItems];
+    updatedLineItems[index] = {
+      ...updatedLineItems[index],
+      price: price,
+      customPrice: true
+    };
+    setLineItems(updatedLineItems);
+    calculateTotalAmount(updatedLineItems);
+  };
+
   const addLineItem = () => {
     setLineItems([...lineItems, {
       serviceId: '',
       serviceName: '',
       persons: 1,
-      price: 0
+      price: 0,
+      customPrice: false
     }]);
   };
 
@@ -212,7 +226,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         <div className="space-y-3 mt-2">
           {lineItems.map((item, index) => (
             <div key={index} className="grid grid-cols-12 gap-2 items-end border p-3 rounded-md">
-              <div className="col-span-6">
+              <div className="col-span-5">
                 <Label htmlFor={`serviceType-${index}`}>Service Type</Label>
                 <Select
                   value={item.serviceId}
@@ -231,7 +245,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 </Select>
               </div>
               
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <Label htmlFor={`persons-${index}`}>Persons</Label>
                 <Input 
                   id={`persons-${index}`} 
@@ -242,7 +256,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 />
               </div>
               
-              <div className="col-span-2">
+              <div className="col-span-3">
+                <Label htmlFor={`price-${index}`}>Unit Price (₱)</Label>
+                <Input 
+                  id={`price-${index}`} 
+                  type="number" 
+                  min="0"
+                  value={item.price}
+                  onChange={(e) => handlePriceChange(parseFloat(e.target.value) || 0, index)}
+                  className={item.customPrice ? "border-primary" : ""}
+                />
+              </div>
+              
+              <div className="col-span-1">
                 <Label htmlFor={`subtotal-${index}`}>Subtotal</Label>
                 <Input 
                   id={`subtotal-${index}`} 

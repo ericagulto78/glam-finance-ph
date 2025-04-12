@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from '@/components/ui/button';
 import BookingForm, { BookingFormData } from './BookingForm';
 import BookingDetails from './BookingDetails';
@@ -92,42 +93,50 @@ export const BookingDialogs: React.FC<BookingDialogsProps> = ({
     <>
       {/* Add Booking Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={onAddDialogOpenChange}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[525px] max-h-[85vh] p-0">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Add New Booking</DialogTitle>
             <DialogDescription>
               Enter the details for the new booking.
             </DialogDescription>
           </DialogHeader>
-          <BookingForm
-            formData={newBooking}
-            isLoading={isLoading}
-            onFormChange={onNewBookingChange}
-            onCancel={() => onAddDialogOpenChange(false)}
-            onSubmit={onSubmitNewBooking}
-            submitLabel="Add Booking"
-          />
+          <ScrollArea className="max-h-[calc(85vh-130px)]">
+            <div className="p-6 pt-2">
+              <BookingForm
+                formData={newBooking}
+                isLoading={isLoading}
+                onFormChange={onNewBookingChange}
+                onCancel={() => onAddDialogOpenChange(false)}
+                onSubmit={onSubmitNewBooking}
+                submitLabel="Add Booking"
+              />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 
       {/* Edit Booking Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={onEditDialogOpenChange}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[525px] max-h-[85vh] p-0">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Edit Booking</DialogTitle>
             <DialogDescription>
               Update the booking details below.
             </DialogDescription>
           </DialogHeader>
           {selectedBooking && (
-            <BookingForm
-              formData={selectedBooking}
-              isLoading={isLoading}
-              onFormChange={onSelectedBookingChange}
-              onCancel={() => onEditDialogOpenChange(false)}
-              onSubmit={onUpdateBooking}
-              submitLabel="Save Changes"
-            />
+            <ScrollArea className="max-h-[calc(85vh-130px)]">
+              <div className="p-6 pt-2">
+                <BookingForm
+                  formData={selectedBooking}
+                  isLoading={isLoading}
+                  onFormChange={onSelectedBookingChange}
+                  onCancel={() => onEditDialogOpenChange(false)}
+                  onSubmit={onUpdateBooking}
+                  submitLabel="Save Changes"
+                />
+              </div>
+            </ScrollArea>
           )}
         </DialogContent>
       </Dialog>
@@ -135,16 +144,20 @@ export const BookingDialogs: React.FC<BookingDialogsProps> = ({
       {/* View Booking Dialog */}
       {selectedBooking && (
         <Dialog open={isViewDialogOpen} onOpenChange={onViewDialogOpenChange}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[600px] max-h-[85vh] p-0">
+            <DialogHeader className="p-6 pb-2">
               <DialogTitle>Booking Details</DialogTitle>
             </DialogHeader>
-            <BookingDetails 
-              booking={selectedBooking} 
-              onCreateInvoice={handleCreateInvoice}
-              hasInvoice={hasInvoice}
-            />
-            <DialogFooter className="gap-2">
+            <ScrollArea className="max-h-[calc(85vh-130px)]">
+              <div className="p-6 pt-2">
+                <BookingDetails 
+                  booking={selectedBooking} 
+                  onCreateInvoice={handleCreateInvoice}
+                  hasInvoice={hasInvoice}
+                />
+              </div>
+            </ScrollArea>
+            <DialogFooter className="p-6 pt-4 border-t">
               <Button variant="outline" onClick={() => onViewDialogOpenChange(false)}>
                 Close
               </Button>
