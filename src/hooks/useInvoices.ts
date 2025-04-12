@@ -14,7 +14,6 @@ export interface InvoiceFormData {
   id?: string;
   invoice_number: string;
   client: string;
-  email: string;
   issue_date: string;
   due_date: string;
   amount: number;
@@ -23,6 +22,7 @@ export interface InvoiceFormData {
   bank_account_id: string | null;
   booking_id: string | null;
   notes: string;
+  description?: string;
 }
 
 export function useInvoices() {
@@ -42,7 +42,6 @@ export function useInvoices() {
   const initialInvoiceState: InvoiceFormData = {
     invoice_number: '',
     client: '',
-    email: '',
     issue_date: new Date().toISOString().split('T')[0],
     due_date: new Date().toISOString().split('T')[0],
     amount: 0,
@@ -50,7 +49,8 @@ export function useInvoices() {
     payment_method: 'unpaid',
     bank_account_id: null,
     booking_id: null,
-    notes: ''
+    notes: '',
+    description: ''
   };
   
   const [newInvoice, setNewInvoice] = useState<InvoiceFormData>(initialInvoiceState);
@@ -105,7 +105,6 @@ export function useInvoices() {
       const invoiceToInsert = {
         invoice_number: newInvoice.invoice_number,
         client: newInvoice.client,
-        email: newInvoice.email,
         issue_date: newInvoice.issue_date,
         due_date: newInvoice.due_date,
         amount: newInvoice.amount,
@@ -114,6 +113,7 @@ export function useInvoices() {
         bank_account_id: newInvoice.bank_account_id,
         booking_id: newInvoice.booking_id,
         notes: newInvoice.notes,
+        description: newInvoice.description,
         user_id: user.id,
       };
 
@@ -156,7 +156,6 @@ export function useInvoices() {
         .update({
           invoice_number: selectedInvoice.invoice_number,
           client: selectedInvoice.client,
-          email: selectedInvoice.email,
           issue_date: selectedInvoice.issue_date,
           due_date: selectedInvoice.due_date,
           amount: selectedInvoice.amount,
@@ -267,7 +266,6 @@ export function useInvoices() {
       const invoiceToInsert = {
         invoice_number: `INV-${Date.now().toString().slice(-8)}`,
         client: booking.client,
-        email: '',
         issue_date: new Date().toISOString().split('T')[0],
         due_date: new Date().toISOString().split('T')[0],
         amount: booking.amount,

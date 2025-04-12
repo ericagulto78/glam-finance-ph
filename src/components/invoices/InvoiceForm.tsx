@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +23,7 @@ export interface InvoiceFormData {
   payment_method: PaymentMethod;
   bank_account_id?: string | null;
   booking_id?: string | null;
+  description?: string;
 }
 
 interface InvoiceFormProps {

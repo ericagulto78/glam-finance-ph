@@ -116,7 +116,6 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   client: string;
-  email: string;
   issue_date: string;
   due_date: string;
   amount: number;
@@ -128,7 +127,7 @@ export interface Invoice {
   created_at: string;
   updated_at: string;
   user_id: string;
-  description?: string; // Added description field
+  description?: string;
 }
 
 // Helper function to cast database types to our interface
@@ -136,7 +135,6 @@ export const castInvoice = (data: any): Invoice => ({
   id: data.id,
   invoice_number: data.invoice_number,
   client: data.client,
-  email: data.email || '',
   issue_date: data.issue_date,
   due_date: data.due_date,
   amount: data.amount || 0,
