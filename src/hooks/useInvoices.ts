@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -259,8 +258,14 @@ export function useInvoices() {
     
     setIsLoading(true);
     try {
+      // Calculate total service amount (excluding fees)
+      const serviceAmount = booking.amount - (booking.transportation_fee || 0) - (booking.early_morning_fee || 0);
+    
+      // Create a description from the booking details
+      const invoiceDescription = `${booking.service}${booking.service_details ? `\n\nDetails: ${booking.service_details}` : ''}`;
+    
       const invoiceToInsert = {
-        invoice_number: `INV-${Date.now()}`,
+        invoice_number: `INV-${Date.now().toString().slice(-8)}`,
         client: booking.client,
         email: '',
         issue_date: new Date().toISOString().split('T')[0],
@@ -270,7 +275,8 @@ export function useInvoices() {
         payment_method: 'unpaid',
         bank_account_id: null,
         booking_id: booking.id,
-        notes: `Invoice for ${booking.service} service on ${booking.date} at ${booking.time}`,
+        notes: `Invoice for ${booking.service} on ${booking.date} at ${booking.time}`,
+        description: invoiceDescription,
         user_id: user.id,
       };
 
@@ -293,6 +299,7 @@ export function useInvoices() {
         description: error.message,
         variant: "destructive",
       });
+      throw error; // Re-throw to handle in the calling function
     } finally {
       setIsLoading(false);
     }

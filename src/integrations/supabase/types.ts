@@ -54,13 +54,16 @@ export type Database = {
           client: string
           created_at: string
           date: string
+          early_morning_fee: number | null
           id: string
           location: string
+          persons: number | null
           reservation_fee: number | null
           service: string
           service_details: string | null
           status: string
           time: string
+          transportation_fee: number | null
           updated_at: string
           user_id: string
         }
@@ -69,13 +72,16 @@ export type Database = {
           client: string
           created_at?: string
           date: string
+          early_morning_fee?: number | null
           id?: string
           location: string
+          persons?: number | null
           reservation_fee?: number | null
           service: string
           service_details?: string | null
           status: string
           time: string
+          transportation_fee?: number | null
           updated_at?: string
           user_id: string
         }
@@ -84,13 +90,16 @@ export type Database = {
           client?: string
           created_at?: string
           date?: string
+          early_morning_fee?: number | null
           id?: string
           location?: string
+          persons?: number | null
           reservation_fee?: number | null
           service?: string
           service_details?: string | null
           status?: string
           time?: string
+          transportation_fee?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -142,6 +151,7 @@ export type Database = {
           booking_id: string | null
           client: string
           created_at: string
+          description: string | null
           due_date: string
           id: string
           invoice_number: string
@@ -157,6 +167,7 @@ export type Database = {
           booking_id?: string | null
           client: string
           created_at?: string
+          description?: string | null
           due_date: string
           id?: string
           invoice_number: string
@@ -172,6 +183,7 @@ export type Database = {
           booking_id?: string | null
           client?: string
           created_at?: string
+          description?: string | null
           due_date?: string
           id?: string
           invoice_number?: string

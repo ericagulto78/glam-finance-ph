@@ -43,7 +43,7 @@ interface BookingStore {
   setIsEditDialogOpen: (isOpen: boolean) => void;
   setIsDeleteDialogOpen: (isOpen: boolean) => void;
   setIsViewDialogOpen: (isOpen: boolean) => void;
-  setIsLoading: (isLoading: boolean) => void; // Added missing action
+  setIsLoading: (isLoading: boolean) => void;
   
   // Form handlers
   handleNewBookingChange: (field: string, value: any) => void;
@@ -92,7 +92,7 @@ export const useBookingsStore = create<BookingStore>((set, get) => ({
   setIsEditDialogOpen: (isOpen) => set({ isEditDialogOpen: isOpen }),
   setIsDeleteDialogOpen: (isOpen) => set({ isDeleteDialogOpen: isOpen }),
   setIsViewDialogOpen: (isOpen) => set({ isViewDialogOpen: isOpen }),
-  setIsLoading: (isLoading) => set({ isLoading }), // Added missing action implementation
+  setIsLoading: (isLoading) => set({ isLoading }),
   
   // Form handlers
   handleNewBookingChange: (field, value) => {
@@ -214,21 +214,35 @@ export function useBookings() {
       if (error) throw error;
       
       store.setIsAddDialogOpen(false);
+      useBookingsStore.setState({ 
+        newBooking: initialBookingState 
+      });
+      
       // Immediately fetch bookings after adding
       await fetchBookings();
       
-      // Reset newBooking to initial state
-      store.newBooking = initialBookingState;
-      
       // Create an invoice for this booking
       if (data && data.length > 0) {
-        await addBookingInvoice(data[0] as Booking);
+        try {
+          await addBookingInvoice(data[0] as Booking);
+          toast({
+            title: "Booking added",
+            description: "The booking has been successfully added with an invoice",
+          });
+        } catch (invoiceError: any) {
+          console.error('Error creating invoice:', invoiceError);
+          toast({
+            title: "Booking added but invoice creation failed",
+            description: "The booking was saved but we couldn't create an invoice: " + invoiceError.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Booking added",
+          description: "The booking has been successfully added",
+        });
       }
-      
-      toast({
-        title: "Booking added",
-        description: "The booking has been successfully added with an invoice",
-      });
     } catch (error: any) {
       console.error('Error adding booking:', error);
       toast({
