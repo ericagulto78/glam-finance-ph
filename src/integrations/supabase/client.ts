@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use import.meta.env instead of process.env for Vite applications
@@ -54,6 +53,9 @@ export interface Booking {
   created_at: string;
   updated_at: string;
   user_id: string;
+  persons?: number;
+  transportation_fee?: number;
+  early_morning_fee?: number;
 }
 
 // Helper function to cast database types to our interface
@@ -70,7 +72,10 @@ export const castBooking = (data: any): Booking => ({
   status: data.status as BookingStatus,
   created_at: data.created_at,
   updated_at: data.updated_at,
-  user_id: data.user_id
+  user_id: data.user_id,
+  persons: data.persons || 1,
+  transportation_fee: data.transportation_fee || 0,
+  early_morning_fee: data.early_morning_fee || 0
 });
 
 export type ExpenseCategory = 'supplies' | 'equipment' | 'travel' | 'rent' | 'utilities' | 'marketing' | 'professional' | 'insurance' | 'taxes' | 'other';
@@ -155,6 +160,8 @@ export interface ServiceType {
   created_at: string;
   updated_at: string;
   user_id: string;
+  icon?: string;
+  default_price?: number;
 }
 
 // Helper function to cast database types to our interface
@@ -166,7 +173,9 @@ export const castServiceType = (data: any): ServiceType => ({
   duration: data.duration || 60,
   created_at: data.created_at,
   updated_at: data.updated_at,
-  user_id: data.user_id
+  user_id: data.user_id,
+  icon: data.icon || '',
+  default_price: data.default_price || 0
 });
 
 export type TransactionType = 'deposit' | 'withdrawal' | 'transfer';

@@ -99,14 +99,14 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({
             <span className="text-right">₱{(booking.amount - (booking.transportation_fee || 0) - (booking.early_morning_fee || 0)).toLocaleString()}</span>
           </div>
           
-          {booking.transportation_fee > 0 && (
+          {booking.transportation_fee && booking.transportation_fee > 0 && (
             <div className="grid grid-cols-2">
               <span>Transportation Fee:</span>
               <span className="text-right">₱{booking.transportation_fee.toLocaleString()}</span>
             </div>
           )}
           
-          {booking.early_morning_fee > 0 && (
+          {booking.early_morning_fee && booking.early_morning_fee > 0 && (
             <div className="grid grid-cols-2">
               <span>Early Morning Fee:</span>
               <span className="text-right">₱{booking.early_morning_fee.toLocaleString()}</span>
