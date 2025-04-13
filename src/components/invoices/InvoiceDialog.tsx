@@ -44,6 +44,7 @@ const InvoiceDialog: React.FC<InvoiceDialogProps> = ({
     status: 'pending',
     payment_method: 'unpaid',
     booking_id: null,
+    notes: '',
   });
 
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
@@ -68,6 +69,7 @@ const InvoiceDialog: React.FC<InvoiceDialogProps> = ({
         status: 'pending',
         payment_method: 'unpaid',
         booking_id: null,
+        notes: '',
       });
       setSelectedBookingId(null);
     }
@@ -90,6 +92,7 @@ const InvoiceDialog: React.FC<InvoiceDialogProps> = ({
         client: selectedBooking.client,
         amount: selectedBooking.amount,
         booking_id: selectedBooking.id,
+        notes: `Booking for ${selectedBooking.service} on ${formatDate(selectedBooking.date)}`,
       }));
     }
   };
@@ -205,6 +208,17 @@ const InvoiceDialog: React.FC<InvoiceDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes || ''}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              placeholder="Add any additional notes or details about this invoice"
+              rows={3}
+            />
           </div>
         </div>
         

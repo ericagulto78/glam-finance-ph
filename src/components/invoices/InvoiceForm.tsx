@@ -181,6 +181,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         />
       </div>
       
+      <div className="space-y-2">
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes || ''}
+          onChange={(e) => onFormChange('notes', e.target.value)}
+          placeholder="Additional notes about this invoice"
+          rows={2}
+        />
+      </div>
+      
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={onCancel}>
           Cancel
