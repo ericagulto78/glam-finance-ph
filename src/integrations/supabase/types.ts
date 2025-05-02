@@ -18,6 +18,7 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean | null
+          type: Database["public"]["Enums"]["account_type"]
           undeposited: number | null
           updated_at: string
           user_id: string
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean | null
+          type?: Database["public"]["Enums"]["account_type"]
           undeposited?: number | null
           updated_at?: string
           user_id: string
@@ -42,6 +44,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean | null
+          type?: Database["public"]["Enums"]["account_type"]
           undeposited?: number | null
           updated_at?: string
           user_id?: string
@@ -102,6 +105,48 @@ export type Database = {
           transportation_fee?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      business_profiles: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          logo_url: string | null
+          name: string | null
+          phone: string | null
+          tax_number: string | null
+          updated_at: string | null
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string | null
+          user_id?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -299,25 +344,49 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          address: string | null
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           email: string
+          full_name: string | null
           id: string
+          is_admin: boolean | null
+          nickname: string | null
+          phone: string | null
+          role: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           email: string
+          full_name?: string | null
           id?: string
+          is_admin?: boolean | null
+          nickname?: string | null
+          phone?: string | null
+          role?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           email?: string
+          full_name?: string | null
           id?: string
+          is_admin?: boolean | null
+          nickname?: string | null
+          phone?: string | null
+          role?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -329,17 +398,131 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      check_enum_exists: {
+        Args: { enum_name: string }
+        Returns: Json
+      }
       decrement_balance: {
         Args: { row_id: string; amount_to_subtract: number }
         Returns: number
+      }
+      delete_bank_account: {
+        Args: { account_id: string; user_id: string }
+        Returns: Json
+      }
+      ensure_column_exists: {
+        Args: {
+          p_table: string
+          p_column: string
+          p_type: string
+          p_default?: string
+        }
+        Returns: undefined
+      }
+      exec_sql: {
+        Args: { sql_query: string }
+        Returns: Json
+      }
+      get_table_structure: {
+        Args: { table_name: string }
+        Returns: Json
       }
       increment_balance: {
         Args: { row_id: string; amount_to_add: number }
         Returns: number
       }
+      insert_bank_account: {
+        Args: {
+          account_type: string
+          balance: number
+          is_default: boolean
+          undeposited: number
+          bank_name: string
+          account_name: string
+          account_number: string
+          user_id: string
+        }
+        Returns: Json
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      refresh_schema_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_bank_account: {
+        Args: {
+          account_id: string
+          account_type: string
+          balance: number
+          is_default: boolean
+          undeposited: number
+          bank_name: string
+          account_name: string
+          account_number: string
+          user_id: string
+        }
+        Returns: Json
+      }
+      update_business_profile: {
+        Args: {
+          p_name?: string
+          p_address?: string
+          p_email?: string
+          p_phone?: string
+          p_website?: string
+          p_tax_number?: string
+          p_logo_url?: string
+        }
+        Returns: Json
+      }
+      update_business_profile_admin: {
+        Args: {
+          p_user_id: string
+          p_name?: string
+          p_address?: string
+          p_email?: string
+          p_phone?: string
+          p_website?: string
+          p_tax_number?: string
+          p_logo_url?: string
+        }
+        Returns: Json
+      }
+      update_user_profile: {
+        Args: {
+          p_full_name?: string
+          p_nickname?: string
+          p_phone?: string
+          p_bio?: string
+          p_address?: string
+          p_avatar_url?: string
+        }
+        Returns: Json
+      }
+      update_user_profile_admin: {
+        Args: {
+          p_user_id: string
+          p_full_name?: string
+          p_nickname?: string
+          p_phone?: string
+          p_bio?: string
+          p_address?: string
+          p_avatar_url?: string
+          p_role?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      account_type: "bank" | "e-wallet"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -454,6 +637,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_type: ["bank", "e-wallet"],
+    },
   },
 } as const

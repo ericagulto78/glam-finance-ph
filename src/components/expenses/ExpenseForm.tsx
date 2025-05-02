@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PlusCircle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,6 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Expense } from '@/integrations/supabase/client';
 
 interface ExpenseFormProps {
@@ -22,6 +28,18 @@ interface ExpenseFormProps {
   submitLabel: string;
 }
 
+const DEFAULT_CATEGORIES = [
+  "Supplies", 
+  "Inventory", 
+  "Equipment", 
+  "Transportation", 
+  "Meals", 
+  "Utilities", 
+  "Rent", 
+  "Subscription", 
+  "Other"
+];
+
 const ExpenseForm: React.FC<ExpenseFormProps> = ({
   expense,
   isLoading,
@@ -30,6 +48,17 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   onSubmit,
   submitLabel,
 }) => {
+  const [newCategory, setNewCategory] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+
+  const handleAddCategory = () => {
+    if (newCategory.trim() !== "") {
+      onFormChange('category', newCategory.trim());
+      setNewCategory("");
+      setIsAddingCategory(false);
+    }
+  };
+
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
@@ -40,29 +69,63 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
             type="date" 
             value={expense.date || ''}
             onChange={(e) => onFormChange('date', e.target.value)}
+            required
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select 
-            value={expense.category || ''}
-            onValueChange={(value) => onFormChange('category', value)}
-          >
-            <SelectTrigger id="category">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Supplies">Supplies</SelectItem>
-              <SelectItem value="Inventory">Inventory</SelectItem>
-              <SelectItem value="Equipment">Equipment</SelectItem>
-              <SelectItem value="Transportation">Transportation</SelectItem>
-              <SelectItem value="Meals">Meals</SelectItem>
-              <SelectItem value="Utilities">Utilities</SelectItem>
-              <SelectItem value="Rent">Rent</SelectItem>
-              <SelectItem value="Subscription">Subscription</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select 
+              value={expense.category || ''}
+              onValueChange={(value) => onFormChange('category', value)}
+            >
+              <SelectTrigger id="category" className="flex-1">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {DEFAULT_CATEGORIES.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Popover open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  type="button"
+                  title="Add new category"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Add new category</h4>
+                  <Input 
+                    placeholder="New category name" 
+                    value={newCategory} 
+                    onChange={(e) => setNewCategory(e.target.value)} 
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setIsAddingCategory(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleAddCategory}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
       <div className="space-y-2">
@@ -71,6 +134,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
           id="description" 
           value={expense.description || ''}
           onChange={(e) => onFormChange('description', e.target.value)}
+          required
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -81,6 +145,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
             type="number" 
             value={(expense.amount || 0).toString()}
             onChange={(e) => onFormChange('amount', parseInt(e.target.value) || 0)}
+            required
           />
         </div>
       </div>

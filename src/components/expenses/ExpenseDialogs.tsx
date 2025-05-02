@@ -1,9 +1,6 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Dialog, 
   DialogContent, 
@@ -12,13 +9,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import ExpenseForm from './ExpenseForm';
 import type { Expense } from '@/integrations/supabase/client';
 
 interface ExpenseDialogsProps {
@@ -65,83 +56,14 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
               Enter the details for the new expense.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-description">Description</Label>
-              <Input 
-                id="new-description" 
-                value={newExpense.description || ''}
-                onChange={(e) => onNewExpenseChange('description', e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-date">Date</Label>
-                <Input 
-                  id="new-date" 
-                  type="date" 
-                  value={newExpense.date || ''}
-                  onChange={(e) => onNewExpenseChange('date', e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-category">Category</Label>
-                <Select 
-                  value={newExpense.category || ''} 
-                  onValueChange={(value) => onNewExpenseChange('category', value)}
-                >
-                  <SelectTrigger id="new-category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Supplies">Supplies</SelectItem>
-                    <SelectItem value="Inventory">Inventory</SelectItem>
-                    <SelectItem value="Equipment">Equipment</SelectItem>
-                    <SelectItem value="Transportation">Transportation</SelectItem>
-                    <SelectItem value="Meals">Meals</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="new-amount">Amount (₱)</Label>
-                <Input 
-                  id="new-amount" 
-                  type="number" 
-                  value={newExpense.amount?.toString() || '0'}
-                  onChange={(e) => onNewExpenseChange('amount', parseInt(e.target.value) || 0)}
-                />
-              </div>
-              <div className="space-y-2 flex items-end">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="new-tax-deductible" 
-                    checked={newExpense.tax_deductible || false}
-                    onCheckedChange={(checked) => onNewExpenseChange('tax_deductible', !!checked)}
-                  />
-                  <label
-                    htmlFor="new-tax-deductible"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Tax Deductible
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onAddDialogOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              onClick={onSubmitNewExpense}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Adding...' : 'Add Expense'}
-            </Button>
-          </DialogFooter>
+          <ExpenseForm
+            expense={newExpense}
+            isLoading={isLoading}
+            onFormChange={onNewExpenseChange}
+            onCancel={() => onAddDialogOpenChange(false)}
+            onSubmit={onSubmitNewExpense}
+            submitLabel="Add Expense"
+          />
         </DialogContent>
       </Dialog>
 
@@ -155,84 +77,15 @@ const ExpenseDialogs: React.FC<ExpenseDialogsProps> = ({
             </DialogDescription>
           </DialogHeader>
           {selectedExpense && (
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Input 
-                  id="edit-description" 
-                  value={selectedExpense.description || ''}
-                  onChange={(e) => onSelectedExpenseChange('description', e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-date">Date</Label>
-                  <Input 
-                    id="edit-date" 
-                    type="date" 
-                    value={selectedExpense.date || ''}
-                    onChange={(e) => onSelectedExpenseChange('date', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-category">Category</Label>
-                  <Select 
-                    value={selectedExpense.category || ''}
-                    onValueChange={(value) => onSelectedExpenseChange('category', value)}
-                  >
-                    <SelectTrigger id="edit-category">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Supplies">Supplies</SelectItem>
-                      <SelectItem value="Inventory">Inventory</SelectItem>
-                      <SelectItem value="Equipment">Equipment</SelectItem>
-                      <SelectItem value="Transportation">Transportation</SelectItem>
-                      <SelectItem value="Meals">Meals</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-amount">Amount (₱)</Label>
-                  <Input 
-                    id="edit-amount" 
-                    type="number" 
-                    value={selectedExpense.amount?.toString() || '0'}
-                    onChange={(e) => onSelectedExpenseChange('amount', parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div className="space-y-2 flex items-end">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="edit-tax-deductible" 
-                      checked={selectedExpense.tax_deductible || false}
-                      onCheckedChange={(checked) => onSelectedExpenseChange('tax_deductible', !!checked)}
-                    />
-                    <label
-                      htmlFor="edit-tax-deductible"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Tax Deductible
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ExpenseForm
+              expense={selectedExpense}
+              isLoading={isLoading}
+              onFormChange={onSelectedExpenseChange}
+              onCancel={() => onEditDialogOpenChange(false)}
+              onSubmit={onUpdateExpense}
+              submitLabel="Save Changes"
+            />
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onEditDialogOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              onClick={onUpdateExpense}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -25,22 +25,20 @@ export function useExpenses() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selectedExpense, setSelectedExpense] = useState<Partial<Expense>>({
-    name: '',
+    description: '',
     amount: 0,
     category: 'other',
     date: new Date().toISOString().split('T')[0],
     tax_deductible: false,
     is_monthly: false,
-    description: ''
   });
   const [newExpense, setNewExpense] = useState<Partial<Expense>>({
-    name: '',
+    description: '',
     amount: 0,
     category: 'other',
     date: new Date().toISOString().split('T')[0],
     tax_deductible: false,
     is_monthly: false,
-    description: ''
   });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -85,10 +83,10 @@ export function useExpenses() {
   const addExpense = async () => {
     if (!user) return;
     
-    if (!newExpense.name || !newExpense.category || !newExpense.date) {
+    if (!newExpense.description || !newExpense.category || !newExpense.date) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields",
+        description: "Please fill in description, category, and date",
         variant: "destructive",
       });
       return;
@@ -97,13 +95,12 @@ export function useExpenses() {
     setIsLoading(true);
     try {
       const expenseToInsert = {
-        name: newExpense.name,
+        description: newExpense.description,
         amount: newExpense.amount || 0,
         category: newExpense.category,
         date: newExpense.date,
         tax_deductible: newExpense.tax_deductible || false,
         is_monthly: newExpense.is_monthly || false,
-        description: newExpense.description || '',
         user_id: user.id,
       };
 
@@ -119,13 +116,12 @@ export function useExpenses() {
       await fetchExpenses();
       
       setNewExpense({
-        name: '',
+        description: '',
         amount: 0,
         category: 'other',
         date: new Date().toISOString().split('T')[0],
         tax_deductible: false,
         is_monthly: false,
-        description: ''
       });
       toast({
         title: "Expense added",
@@ -147,18 +143,26 @@ export function useExpenses() {
   const updateExpense = async () => {
     if (!selectedExpense || !user) return;
     
+    if (!selectedExpense.description || !selectedExpense.category || !selectedExpense.date) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in description, category, and date",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const { error } = await supabase
         .from('expenses')
         .update({
-          name: selectedExpense.name,
+          description: selectedExpense.description,
           amount: selectedExpense.amount || 0,
           category: selectedExpense.category,
           date: selectedExpense.date,
           tax_deductible: selectedExpense.tax_deductible || false,
           is_monthly: selectedExpense.is_monthly || false,
-          description: selectedExpense.description || ''
         })
         .eq('id', selectedExpense.id);
 
@@ -201,7 +205,7 @@ export function useExpenses() {
       await fetchExpenses();
       toast({
         title: "Expense deleted",
-        description: `Expense ${selectedExpense.name} has been deleted.`,
+        description: `Expense has been deleted.`,
       });
     } catch (error: any) {
       console.error('Error deleting expense:', error);
@@ -233,8 +237,7 @@ export function useExpenses() {
 
   // Filter expenses based on search term and category
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         expense.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = expense.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
     
