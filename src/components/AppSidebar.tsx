@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   LayoutDashboard,
@@ -5,50 +6,94 @@ import {
   Receipt,
   TrendingDown,
   Wallet,
-  ListTodo
+  ListTodo,
+  Users,
+  Settings
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/types/auth';
 
 const AppSidebar: React.FC = () => {
   const location = useLocation();
+  const { userRole } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  const menuItems = [
-    { 
-      name: 'Dashboard', 
-      path: '/', 
-      icon: <LayoutDashboard size={20} /> 
-    },
-    { 
-      name: 'Bookings', 
-      path: '/bookings', 
-      icon: <Calendar size={20} /> 
-    },
-    { 
-      name: 'Service Types', 
-      path: '/service-types', 
-      icon: <ListTodo size={20} /> 
-    },
-    { 
-      name: 'Invoices', 
-      path: '/invoices', 
-      icon: <Receipt size={20} /> 
-    },
-    { 
-      name: 'Expenses', 
-      path: '/expenses', 
-      icon: <TrendingDown size={20} /> 
-    },
-    { 
-      name: 'Bank Accounts', 
-      path: '/bank-accounts', 
-      icon: <Wallet size={20} /> 
-    },
-  ];
+  // Role-based menu items
+  const getMenuItemsByRole = (role: UserRole) => {
+    const baseMenuItems = [
+      { 
+        name: 'Dashboard', 
+        path: '/', 
+        icon: <LayoutDashboard size={20} />,
+        minRole: 'client' as UserRole
+      },
+      { 
+        name: 'Bookings', 
+        path: '/bookings', 
+        icon: <Calendar size={20} />,
+        minRole: 'client' as UserRole
+      },
+    ];
+    
+    const adminMenuItems = [
+      { 
+        name: 'Service Types', 
+        path: '/service-types', 
+        icon: <ListTodo size={20} />,
+        minRole: 'team_member' as UserRole
+      },
+      { 
+        name: 'Invoices', 
+        path: '/invoices', 
+        icon: <Receipt size={20} />,
+        minRole: 'team_member' as UserRole
+      },
+      { 
+        name: 'Expenses', 
+        path: '/expenses', 
+        icon: <TrendingDown size={20} />,
+        minRole: 'team_member' as UserRole
+      },
+      { 
+        name: 'Bank Accounts', 
+        path: '/bank-accounts', 
+        icon: <Wallet size={20} />,
+        minRole: 'studio_admin' as UserRole
+      },
+      { 
+        name: 'User Management', 
+        path: '/admin/users', 
+        icon: <Users size={20} />,
+        minRole: 'studio_admin' as UserRole
+      },
+      { 
+        name: 'Settings', 
+        path: '/settings', 
+        icon: <Settings size={20} />,
+        minRole: 'studio_admin' as UserRole
+      },
+    ];
+
+    // Define role hierarchy for permission checks
+    const roleHierarchy: Record<UserRole, number> = {
+      'client': 0,
+      'team_member': 1,
+      'studio_admin': 2,
+      'super_administrator': 3
+    };
+
+    // Filter menu items based on user role
+    return [...baseMenuItems, ...adminMenuItems].filter(
+      item => roleHierarchy[role] >= roleHierarchy[item.minRole]
+    );
+  };
+
+  const menuItems = getMenuItemsByRole(userRole);
 
   return (
     <div className="flex flex-col h-full py-4">

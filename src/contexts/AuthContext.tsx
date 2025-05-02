@@ -1,10 +1,11 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, isAdmin } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { AuthContextType } from '@/types/auth';
+import { AuthContextType, UserRole } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -18,10 +19,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const { 
     userStatus, 
-    setUserStatus, 
+    userRole,
+    setUserStatus,
+    setUserRole,
     checkUserApprovalStatus, 
+    checkUserRole,
     approveUser: approveUserProfile,
-    rejectUser: rejectUserProfile
+    rejectUser: rejectUserProfile,
+    updateUserRole: updateUserRoleProfile
   } = useUserProfile();
 
   useEffect(() => {
@@ -53,15 +58,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // If admin, automatically approved
           if (userIsAdmin) {
             setUserStatus('approved');
+            setUserRole('super_administrator');
           } else {
             // Check approval status
             const status = await checkUserApprovalStatus(session.user.id);
             console.log("User approval status:", status);
             setUserStatus(status);
+            
+            // Check user role
+            const role = await checkUserRole(session.user.id);
+            console.log("User role:", role);
+            setUserRole(role);
           }
         } else {
           setUser(null);
           setUserStatus('pending');
+          setUserRole('client');
           setIsCurrentUserAdmin(false);
         }
       } catch (error: any) {
@@ -88,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // If admin, automatically approved
           if (userIsAdmin) {
             setUserStatus('approved');
+            setUserRole('super_administrator');
           } else {
             // Use setTimeout to prevent Supabase auth deadlock
             setTimeout(async () => {
@@ -95,11 +108,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const status = await checkUserApprovalStatus(session.user.id);
               console.log("User status from check:", status);
               setUserStatus(status);
+              
+              // Check user role
+              const role = await checkUserRole(session.user.id);
+              console.log("User role from check:", role);
+              setUserRole(role);
             }, 0);
           }
         } else {
           setUser(null);
           setUserStatus('pending');
+          setUserRole('client');
           setIsCurrentUserAdmin(false);
         }
       }
@@ -111,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [checkUserApprovalStatus, setUserStatus]);
+  }, [checkUserApprovalStatus, checkUserRole, setUserStatus, setUserRole]);
 
   const signInWithGoogle = async () => {
     try {
@@ -156,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const approveUser = async (userId: string) => {
     try {
-      if (!isCurrentUserAdmin) {
+      if (!isCurrentUserAdmin && userRole !== 'studio_admin' && userRole !== 'super_administrator') {
         throw new Error("Only administrators can approve users");
       }
 
@@ -177,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const rejectUser = async (userId: string) => {
     try {
-      if (!isCurrentUserAdmin) {
+      if (!isCurrentUserAdmin && userRole !== 'studio_admin' && userRole !== 'super_administrator') {
         throw new Error("Only administrators can reject users");
       }
       
@@ -195,17 +214,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
   };
+
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
+    try {
+      if (userRole !== 'studio_admin' && userRole !== 'super_administrator') {
+        throw new Error("Only administrators can update user roles");
+      }
+      
+      // Super administrators can assign any role, studio admins can only assign client and team_member
+      if (userRole === 'studio_admin' && (newRole === 'super_administrator' || newRole === 'studio_admin')) {
+        throw new Error("You don't have permission to assign this role");
+      }
+      
+      await updateUserRoleProfile(userId, newRole);
+      
+      toast({
+        title: "Role updated",
+        description: `User role has been updated to ${newRole}.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Role update failed",
+        description: error.message || "An error occurred while updating the user role",
+        variant: "destructive",
+      });
+    }
+  };
   
   const value = {
     session,
     user,
     userStatus,
+    userRole,
     loading,
-    isAdmin: isCurrentUserAdmin,
+    isAdmin: isCurrentUserAdmin || userRole === 'super_administrator' || userRole === 'studio_admin',
     signOut,
     signInWithGoogle,
     approveUser,
-    rejectUser
+    rejectUser,
+    updateUserRole
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -354,7 +354,7 @@ export type Database = {
           is_admin: boolean | null
           nickname: string | null
           phone: string | null
-          role: string | null
+          role: Database["public"]["Enums"]["user_role"]
           status: string
           updated_at: string
           user_id: string
@@ -370,7 +370,7 @@ export type Database = {
           is_admin?: boolean | null
           nickname?: string | null
           phone?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           status?: string
           updated_at?: string
           user_id: string
@@ -386,7 +386,7 @@ export type Database = {
           is_admin?: boolean | null
           nickname?: string | null
           phone?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           status?: string
           updated_at?: string
           user_id?: string
@@ -430,6 +430,10 @@ export type Database = {
       get_table_structure: {
         Args: { table_name: string }
         Returns: Json
+      }
+      has_role: {
+        Args: { required_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
       }
       increment_balance: {
         Args: { row_id: string; amount_to_add: number }
@@ -523,6 +527,11 @@ export type Database = {
     }
     Enums: {
       account_type: "bank" | "e-wallet"
+      user_role:
+        | "client"
+        | "team_member"
+        | "studio_admin"
+        | "super_administrator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -639,6 +648,12 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["bank", "e-wallet"],
+      user_role: [
+        "client",
+        "team_member",
+        "studio_admin",
+        "super_administrator",
+      ],
     },
   },
 } as const
