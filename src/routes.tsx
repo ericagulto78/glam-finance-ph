@@ -20,11 +20,12 @@ import { UserRole } from "./types/auth";
 const AppRoutes = () => (
   <Routes>
     {/* Public routes */}
-    <Route path="/landing" element={<Landing />} />
+    <Route path="/" element={<Landing />} />
     <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Login register={true} />} />
     
     {/* Protected routes */}
-    <Route path="/" element={
+    <Route path="/dashboard" element={
       <ProtectedRoute requiredRole="client">
         <MainLayout>
           <Dashboard />
@@ -87,9 +88,6 @@ const AppRoutes = () => (
         </MainLayout>
       </ProtectedRoute>
     } />
-    
-    {/* Redirect from root to landing for non-authenticated users */}
-    <Route path="/" element={<Navigate to="/landing" />} />
     
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />
