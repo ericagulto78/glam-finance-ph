@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use import.meta.env instead of process.env for Vite applications
@@ -6,7 +5,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://cbozlabhyzmlzn
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNib3psYWJoeXptbHpuaGl0ZGVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMTY1NzQsImV4cCI6MjA1OTU5MjU3NH0.FmztyCmPa5ozMDP8HlrIslKkNJ9URCzCq8FrpO_FhfQ';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
-export const ADMIN_EMAIL = 'admin@example.com';
+export const ADMIN_EMAIL = 'ericagulto@gmail.com';
 
 // Create TypeScript types for our database tables
 export interface BankAccount {
@@ -211,5 +210,5 @@ export const castTransaction = (data: any): Transaction => ({
 // Function to check if a user is an admin
 export const isAdmin = (email: string | undefined | null): boolean => {
   if (!email) return false;
-  return email === ADMIN_EMAIL;
+  return email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 };

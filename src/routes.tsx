@@ -26,14 +26,14 @@ const AppRoutes = () => (
     
     {/* Protected routes */}
     <Route path="/dashboard" element={
-      <ProtectedRoute requiredRole="client">
+      <ProtectedRoute>
         <MainLayout>
           <Dashboard />
         </MainLayout>
       </ProtectedRoute>
     } />
     <Route path="/bookings" element={
-      <ProtectedRoute requiredRole="client">
+      <ProtectedRoute>
         <MainLayout>
           <Bookings />
         </MainLayout>

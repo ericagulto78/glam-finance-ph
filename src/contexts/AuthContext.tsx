@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, isAdmin } from '@/integrations/supabase/client';
@@ -30,62 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   } = useUserProfile();
 
   useEffect(() => {
-    async function getInitialSession() {
-      setLoading(true);
-      
-      try {
-        console.log("Getting initial session...");
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Auth session error:', error.message);
-          throw error;
-        }
-        
-        console.log("Session data:", session ? "Session exists" : "No session");
-        setSession(session);
-        
-        if (session?.user) {
-          console.log("User found in session:", session.user.email);
-          setUser(session.user);
-          
-          // Check if user is admin
-          const userIsAdmin = isAdmin(session.user.email);
-          console.log("Is admin:", userIsAdmin);
-          setIsCurrentUserAdmin(userIsAdmin);
-          
-          // If admin, automatically approved
-          if (userIsAdmin) {
-            setUserStatus('approved');
-            setUserRole('super_administrator');
-          } else {
-            // Check approval status
-            const status = await checkUserApprovalStatus(session.user.id);
-            console.log("User approval status:", status);
-            setUserStatus(status);
-            
-            // Check user role
-            const role = await checkUserRole(session.user.id);
-            console.log("User role:", role);
-            setUserRole(role);
-          }
-        } else {
-          setUser(null);
-          setUserStatus('pending');
-          setUserRole('client');
-          setIsCurrentUserAdmin(false);
-        }
-      } catch (error: any) {
-        console.error('Error getting session:', error.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state change event:", event);
         setSession(session);
         
@@ -125,6 +71,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
     
     // Then check for existing session
+    async function getInitialSession() {
+      setLoading(true);
+      
+      try {
+        console.log("Getting initial session...");
+        // Get current session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Auth session error:', error.message);
+          throw error;
+        }
+        
+        console.log("Session data:", session ? "Session exists" : "No session");
+        setSession(session);
+        
+        if (session?.user) {
+          console.log("User found in session:", session.user.email);
+          setUser(session.user);
+          
+          // Check if user is admin by email
+          const userIsAdmin = isAdmin(session.user.email);
+          console.log("Is admin:", userIsAdmin);
+          setIsCurrentUserAdmin(userIsAdmin);
+          
+          // Special handling for ericagulto@gmail.com to ensure admin access
+          if (userIsAdmin || session.user.email === 'ericagulto@gmail.com') {
+            setUserStatus('approved');
+            setUserRole('super_administrator');
+            // Update the database as well to ensure consistency
+            try {
+              await supabase
+                .from('user_profiles')
+                .upsert({ 
+                  user_id: session.user.id, 
+                  email: session.user.email,
+                  status: 'approved', 
+                  role: 'super_administrator' 
+                }, { onConflict: 'user_id' });
+            } catch (err) {
+              console.error("Error updating admin user profile:", err);
+            }
+          } else {
+            // Check approval status
+            const status = await checkUserApprovalStatus(session.user.id);
+            console.log("User approval status:", status);
+            setUserStatus(status);
+            
+            // Check user role
+            const role = await checkUserRole(session.user.id);
+            console.log("User role:", role);
+            setUserRole(role);
+          }
+        } else {
+          setUser(null);
+          setUserStatus('pending');
+          setUserRole('client');
+          setIsCurrentUserAdmin(false);
+        }
+      } catch (error: any) {
+        console.error('Error getting session:', error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
     getInitialSession();
     
     return () => {

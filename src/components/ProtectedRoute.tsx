@@ -32,26 +32,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // Admin access check
-  if (requireAdmin && !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-4">
-          <Alert variant="destructive">
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>
-              You need administrator privileges to access this page.
-            </AlertDescription>
-          </Alert>
-          <Button onClick={() => signOut()} variant="outline" className="w-full">
-            Return to Login
-          </Button>
-        </div>
-      </div>
-    );
+  // If user is admin (by email check) or has super_administrator role, allow access to all routes
+  if (isAdmin || userRole === 'super_administrator') {
+    return <>{children}</>;
   }
 
-  // Role-based access check
+  // Role-based access check for non-admin users
   const roleHierarchy: Record<UserRole, number> = {
     'client': 0,
     'team_member': 1,
@@ -77,8 +63,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Account pending approval
-  if (userStatus === 'pending' && !isAdmin) {
+  // Account pending approval for non-admin users
+  if (userStatus === 'pending') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-4">
@@ -97,8 +83,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Account rejected
-  if (userStatus === 'rejected' && !isAdmin) {
+  // Account rejected for non-admin users
+  if (userStatus === 'rejected') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-4">
