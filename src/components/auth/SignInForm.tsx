@@ -12,9 +12,10 @@ interface SignInFormProps {
   setEmail: (email: string) => void;
   password: string;
   setPassword: (password: string) => void;
+  redirectTo?: string;
 }
 
-const SignInForm = ({ email, setEmail, password, setPassword }: SignInFormProps) => {
+const SignInForm = ({ email, setEmail, password, setPassword, redirectTo = '/' }: SignInFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
