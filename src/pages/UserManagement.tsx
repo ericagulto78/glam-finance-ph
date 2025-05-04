@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import PageHeader from '@/components/layout/PageHeader';
 import UserProfileCard from '@/components/admin/UserProfileCard';
 import { Search, Users } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserProfile {
   id: string;
@@ -28,6 +29,7 @@ const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const { toast } = useToast();
 
   const { approveUser, rejectUser, updateUserRole, userRole } = useAuth();
 
@@ -42,16 +44,26 @@ const UserManagement: React.FC = () => {
   const fetchUserProfiles = async () => {
     setIsLoading(true);
     try {
+      // Use the select query with a simple column selection to avoid RLS recursion
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select('id, user_id, email, full_name, status, role, created_at')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user profiles:', error);
+        toast({
+          title: "Error loading users",
+          description: error.message,
+          variant: "destructive"
+        });
+        throw error;
+      }
 
+      console.log('User profiles loaded:', data?.length || 0);
       setUserProfiles(data || []);
     } catch (error) {
-      console.error('Error fetching user profiles:', error);
+      console.error('Exception fetching user profiles:', error);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +77,7 @@ const UserManagement: React.FC = () => {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         profile => 
-          profile.email.toLowerCase().includes(term) || 
+          profile.email?.toLowerCase().includes(term) || 
           profile.full_name?.toLowerCase().includes(term)
       );
     }

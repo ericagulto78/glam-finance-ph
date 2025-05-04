@@ -21,9 +21,12 @@ const Login: React.FC<LoginProps> = ({ register = false }) => {
   
   useEffect(() => {
     if (user) {
-      navigate('/');
+      // Get the redirect location from the URL search params or default to '/'
+      const params = new URLSearchParams(location.search);
+      const redirectTo = params.get('redirectTo') || '/';
+      navigate(redirectTo);
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.search]);
 
   useEffect(() => {
     // Set tab based on URL
@@ -61,6 +64,7 @@ const Login: React.FC<LoginProps> = ({ register = false }) => {
               setEmail={setEmail}
               password={password}
               setPassword={setPassword}
+              redirectTo="/"
             />
           </TabsContent>
         </Tabs>

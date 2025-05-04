@@ -13,9 +13,10 @@ interface SignUpFormProps {
   setEmail: (email: string) => void;
   password: string;
   setPassword: (password: string) => void;
+  redirectTo?: string;
 }
 
-const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps) => {
+const SignUpForm = ({ email, setEmail, password, setPassword, redirectTo = '/login' }: SignUpFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [signupError, setSignupError] = useState('');
   const { toast } = useToast();
@@ -57,7 +58,7 @@ const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps)
         email: trimmedEmail,
         password,
         options: {
-          emailRedirectTo: `${productionUrl}/login`
+          emailRedirectTo: `${productionUrl}${redirectTo}`
         }
       });
 
