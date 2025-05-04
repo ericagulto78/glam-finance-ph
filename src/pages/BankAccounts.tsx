@@ -10,8 +10,10 @@ import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
 import { useBankTransactions } from '@/hooks/useBankTransactions';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const BankAccounts: React.FC = () => {
+  const navigate = useNavigate();
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal' | 'transfer'>('deposit');
@@ -45,7 +47,8 @@ const BankAccounts: React.FC = () => {
   }, []);
 
   const handleAddAccount = () => {
-    window.location.href = "/bank-account";
+    // Use the navigate function to go to the BankAccount page without an ID
+    navigate('/bank-account');
   };
 
   const handleTransactionClick = (accountId: string, type: 'deposit' | 'withdrawal' | 'transfer') => {
@@ -62,6 +65,10 @@ const BankAccounts: React.FC = () => {
 
   const handleSetDefault = (id: string) => {
     setAccountDefault(id);
+  };
+
+  const handleEditAccount = (accountId: string) => {
+    navigate(`/bank-account?id=${accountId}`);
   };
 
   return (
@@ -116,9 +123,7 @@ const BankAccounts: React.FC = () => {
               <BankAccountCard
                 key={account.id}
                 account={account}
-                onEdit={() => {
-                  window.location.href = `/bank-account?id=${account.id}`;
-                }}
+                onEdit={() => handleEditAccount(account.id)}
                 onDelete={() => deleteBankAccount(account.id)}
                 onSetDefault={() => handleSetDefault(account.id)}
                 onDeposit={(id) => handleTransactionClick(id, 'deposit')}

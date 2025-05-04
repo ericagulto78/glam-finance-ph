@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,14 @@ import {
   CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Plus, 
   CreditCard, 
@@ -31,6 +39,7 @@ const BankAccount = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentAccount, setCurrentAccount] = useState<any>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const accountId = queryParams.get('id');
   
@@ -71,9 +80,23 @@ const BankAccount = () => {
           accountNumber: account.account_number,
           isDefault: account.is_default,
           balance: account.balance,
-          undeposited: account.undeposited
+          undeposited: account.undeposited,
+          accountType: account.type
         });
       }
+    } else {
+      // No ID provided, we're in "add" mode
+      setIsEditing(true);
+      setCurrentAccount(null);
+      form.reset({
+        bankName: '',
+        accountName: '',
+        accountNumber: '',
+        isDefault: false,
+        balance: 0,
+        undeposited: 0,
+        accountType: 'bank'
+      });
     }
   }, [bankAccounts, accountId]);
 
@@ -84,7 +107,8 @@ const BankAccount = () => {
       accountNumber: '',
       isDefault: false,
       balance: 0,
-      undeposited: 0
+      undeposited: 0,
+      accountType: 'bank'
     }
   });
 
@@ -97,7 +121,8 @@ const BankAccount = () => {
       accountNumber: '',
       isDefault: false,
       balance: 0,
-      undeposited: 0
+      undeposited: 0,
+      accountType: 'bank'
     });
   };
 
@@ -110,7 +135,8 @@ const BankAccount = () => {
       accountNumber: account.account_number,
       isDefault: account.is_default,
       balance: account.balance,
-      undeposited: account.undeposited
+      undeposited: account.undeposited,
+      accountType: account.type
     });
   };
 
@@ -127,15 +153,11 @@ const BankAccount = () => {
       addBankAccount(data);
     }
     
-    setIsEditing(false);
-    setCurrentAccount(null);
-    form.reset();
+    navigate('/bank-accounts');
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
-    setCurrentAccount(null);
-    form.reset();
+    navigate('/bank-accounts');
   };
 
   const handleNewTransaction = (type: 'deposit' | 'withdrawal' | 'transfer') => {
@@ -153,8 +175,8 @@ const BankAccount = () => {
   return (
     <div className="h-full">
       <PageHeader 
-        title="Bank Accounts" 
-        subtitle="Manage your bank accounts for payments"
+        title={currentAccount ? "Edit Bank Account" : "Add Bank Account"}
+        subtitle={currentAccount ? "Update your bank account details" : "Add a new bank account for your business"}
         action={!isEditing ? {
           label: "Add Account",
           onClick: handleAddAccount,
@@ -278,6 +300,24 @@ const BankAccount = () => {
                       placeholder="Your account number"
                       {...form.register('accountNumber', { required: true })}
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="accountType">Account Type</Label>
+                    <Select 
+                      defaultValue={form.getValues('accountType') || 'bank'} 
+                      onValueChange={(value) => form.setValue('accountType', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select account type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="bank">Bank</SelectItem>
+                          <SelectItem value="e-wallet">E-Wallet</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <div className="space-y-2">
