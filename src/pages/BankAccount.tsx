@@ -29,7 +29,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft
 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useBankAccounts, BankAccountFormData } from '@/hooks/useBankAccounts';
 import { useBankTransactions } from '@/hooks/useBankTransactions';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
@@ -67,6 +67,18 @@ const BankAccount = () => {
 
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal' | 'transfer'>('deposit');
 
+  const { control, handleSubmit, setValue, watch, reset } = useForm<BankAccountFormData>({
+    defaultValues: {
+      bankName: '',
+      accountName: '',
+      accountNumber: '',
+      isDefault: false,
+      balance: 0,
+      undeposited: 0,
+      accountType: 'bank'
+    }
+  });
+
   useEffect(() => {
     if (accountId) {
       // Load the specific account if ID is provided
@@ -74,7 +86,7 @@ const BankAccount = () => {
       if (account) {
         setCurrentAccount(account);
         setIsEditing(true);
-        form.reset({
+        reset({
           bankName: account.bank_name,
           accountName: account.account_name,
           accountNumber: account.account_number,
@@ -88,7 +100,7 @@ const BankAccount = () => {
       // No ID provided, we're in "add" mode
       setIsEditing(true);
       setCurrentAccount(null);
-      form.reset({
+      reset({
         bankName: '',
         accountName: '',
         accountNumber: '',
@@ -98,24 +110,12 @@ const BankAccount = () => {
         accountType: 'bank'
       });
     }
-  }, [bankAccounts, accountId]);
-
-  const form = useForm<BankAccountFormData>({
-    defaultValues: {
-      bankName: '',
-      accountName: '',
-      accountNumber: '',
-      isDefault: false,
-      balance: 0,
-      undeposited: 0,
-      accountType: 'bank'
-    }
-  });
+  }, [bankAccounts, accountId, reset]);
 
   const handleAddAccount = () => {
     setIsEditing(true);
     setCurrentAccount(null);
-    form.reset({
+    reset({
       bankName: '',
       accountName: '',
       accountNumber: '',
@@ -129,7 +129,7 @@ const BankAccount = () => {
   const handleEditAccount = (account: any) => {
     setIsEditing(true);
     setCurrentAccount(account);
-    form.reset({
+    reset({
       bankName: account.bank_name,
       accountName: account.account_name,
       accountNumber: account.account_number,
@@ -144,7 +144,7 @@ const BankAccount = () => {
     deleteBankAccount(id);
   };
 
-  const handleSubmit = (data: BankAccountFormData) => {
+  const onSubmit = (data: BankAccountFormData) => {
     if (currentAccount) {
       // Editing existing account
       updateBankAccount(currentAccount.id, data);
@@ -175,7 +175,7 @@ const BankAccount = () => {
   return (
     <div className="h-full">
       <PageHeader 
-        title={currentAccount ? "Edit Bank Account" : "Add Bank Account"}
+        title={currentAccount ? "EDIT BANK ACCOUNT" : "ADD BANK ACCOUNT"}
         subtitle={currentAccount ? "Update your bank account details" : "Add a new bank account for your business"}
         action={!isEditing ? {
           label: "Add Account",
@@ -267,91 +267,135 @@ const BankAccount = () => {
         {isEditing ? (
           <Card>
             <CardHeader>
-              <CardTitle>{currentAccount ? 'Edit Bank Account' : 'Add Bank Account'}</CardTitle>
+              <CardTitle>{currentAccount ? 'EDIT BANK ACCOUNT' : 'ADD BANK ACCOUNT'}</CardTitle>
               <CardDescription>
                 {currentAccount ? 'Update your bank account information' : 'Add a new bank account for receiving payments'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="bankName">Bank Name</Label>
-                    <Input
-                      id="bankName"
-                      placeholder="e.g., BDO, BPI, UnionBank"
-                      {...form.register('bankName', { required: true })}
+                    <Controller
+                      name="bankName"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Input
+                          id="bankName"
+                          placeholder="e.g., BDO, BPI, UnionBank"
+                          {...field}
+                        />
+                      )}
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="accountName">Account Name</Label>
-                    <Input
-                      id="accountName"
-                      placeholder="Name on the account"
-                      {...form.register('accountName', { required: true })}
+                    <Controller
+                      name="accountName"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Input
+                          id="accountName"
+                          placeholder="Name on the account"
+                          {...field}
+                        />
+                      )}
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="accountNumber">Account Number</Label>
-                    <Input
-                      id="accountNumber"
-                      placeholder="Your account number"
-                      {...form.register('accountNumber', { required: true })}
+                    <Controller
+                      name="accountNumber"
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Input
+                          id="accountNumber"
+                          placeholder="Your account number"
+                          {...field}
+                        />
+                      )}
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="accountType">Account Type</Label>
-                    <Select 
-                      defaultValue={form.getValues('accountType') || 'bank'} 
-                      onValueChange={(value) => form.setValue('accountType', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="bank">Bank</SelectItem>
-                          <SelectItem value="e-wallet">E-Wallet</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="accountType"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectItem value="bank">Bank</SelectItem>
+                              <SelectItem value="e-wallet">E-Wallet</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="balance">Current Balance (₱)</Label>
-                    <Input
-                      id="balance"
-                      type="number"
-                      placeholder="Current balance"
-                      {...form.register('balance', { 
-                        required: true,
-                        valueAsNumber: true
-                      })}
+                    <Controller
+                      name="balance"
+                      control={control}
+                      rules={{ required: true, valueAsNumber: true }}
+                      render={({ field }) => (
+                        <Input
+                          id="balance"
+                          type="number"
+                          placeholder="Current balance"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      )}
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="undeposited">Undeposited Amount (₱)</Label>
-                    <Input
-                      id="undeposited"
-                      type="number"
-                      placeholder="Undeposited funds"
-                      {...form.register('undeposited', { 
-                        required: true,
-                        valueAsNumber: true
-                      })}
+                    <Controller
+                      name="undeposited"
+                      control={control}
+                      rules={{ required: true, valueAsNumber: true }}
+                      render={({ field }) => (
+                        <Input
+                          id="undeposited"
+                          type="number"
+                          placeholder="Undeposited funds"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      )}
                     />
                   </div>
                   
                   <div className="flex items-center pt-8">
-                    <input
-                      type="checkbox"
-                      id="isDefault"
-                      className="h-4 w-4 rounded border-gray-300 text-rose focus:ring-rose"
-                      {...form.register('isDefault')}
+                    <Controller
+                      name="isDefault"
+                      control={control}
+                      render={({ field }) => (
+                        <input
+                          type="checkbox"
+                          id="isDefault"
+                          className="h-4 w-4 rounded border-gray-300 text-rose focus:ring-rose"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      )}
                     />
                     <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-900">
                       Set as default account
@@ -374,7 +418,7 @@ const BankAccount = () => {
           <div className="grid gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Your Bank Accounts</CardTitle>
+                <CardTitle>YOUR BANK ACCOUNTS</CardTitle>
                 <CardDescription>
                   Manage your bank accounts for receiving payments from clients
                 </CardDescription>
@@ -407,7 +451,7 @@ const BankAccount = () => {
             {bankAccounts.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Transactions</CardTitle>
+                  <CardTitle>RECENT TRANSACTIONS</CardTitle>
                   <CardDescription>
                     Your latest account transactions
                   </CardDescription>

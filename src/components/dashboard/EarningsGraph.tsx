@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { supabase } from '@/integrations/supabase/client';
 import { addDays, subDays, format } from 'date-fns';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 const formatCurrency = (value: number) => {
   return `₱${value.toLocaleString()}`;
@@ -155,13 +156,29 @@ const EarningsGraph = () => {
       setIsLoading(false);
     }
   };
+  
+  // Chart config for styling
+  const chartConfig = {
+    revenue: {
+      label: 'Revenue',
+      theme: {
+        light: 'rgba(124, 58, 237, 0.8)'
+      }
+    },
+    expenses: {
+      label: 'Expenses',
+      theme: {
+        light: 'rgba(239, 68, 68, 0.7)'
+      }
+    }
+  };
 
   return (
-    <Card className="col-span-4">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="col-span-4 overflow-hidden border-none shadow-md bg-gradient-to-br from-slate-50 to-white">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b">
         <div>
-          <CardTitle>Earnings Overview</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl font-serif uppercase tracking-tight">EARNINGS OVERVIEW</CardTitle>
+          <CardDescription className="font-medium text-gray-500">
             {timeframe === '30days' ? 'Last 30 days' : 
              timeframe === '90days' ? 'Last 90 days' : 'Last 12 months'} revenue
           </CardDescription>
@@ -170,7 +187,7 @@ const EarningsGraph = () => {
           value={timeframe}
           onValueChange={(value) => setTimeframe(value as '30days' | '90days' | '12months')}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] bg-white">
             <SelectValue placeholder="Select timeframe" />
           </SelectTrigger>
           <SelectContent>
@@ -182,7 +199,7 @@ const EarningsGraph = () => {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent className="pt-4 h-80">
+      <CardContent className="pt-6 h-80">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <p>Loading data...</p>
@@ -192,7 +209,7 @@ const EarningsGraph = () => {
             <p>No earnings data available for this period</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig} className="w-full h-full">
             <AreaChart
               data={data}
               margin={{
@@ -202,42 +219,84 @@ const EarningsGraph = () => {
                 bottom: 10,
               }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <defs>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#6b7280', fontSize: 12 }}
+                dy={10}
+              />
               <YAxis 
                 width={80}
                 tickFormatter={formatCurrency}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#6b7280', fontSize: 12 }}
+                dx={-10}
               />
               <Tooltip 
-                formatter={(value) => formatCurrency(value as number)}
-                labelFormatter={(label) => `Date: ${label}`}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <ChartTooltipContent 
+                        active={active} 
+                        payload={payload} 
+                        label={label} 
+                        nameKey="dataKey"
+                      />
+                    );
+                  }
+                  return null;
+                }}
               />
-              <Legend />
+              <Legend 
+                verticalAlign="top" 
+                height={36}
+                iconType="circle"
+                iconSize={8}
+                wrapperStyle={{
+                  paddingBottom: 20
+                }}
+              />
               <Area 
                 type="monotone" 
                 dataKey="revenue" 
                 name="Revenue" 
-                stroke="#8884d8" 
-                fill="#8884d8" 
+                stroke="rgba(124, 58, 237, 0.8)" 
+                fill="url(#colorRevenue)"
                 fillOpacity={0.3}
-                activeDot={{ r: 8 }}
+                activeDot={{ r: 6, strokeWidth: 0 }}
+                strokeWidth={2}
               />
               <Area 
                 type="monotone" 
                 dataKey="expenses" 
                 name="Expenses" 
-                stroke="#82ca9d" 
-                fill="#82ca9d" 
+                stroke="rgba(239, 68, 68, 0.7)" 
+                fill="url(#colorExpenses)"
                 fillOpacity={0.3}
+                activeDot={{ r: 6, strokeWidth: 0 }}
+                strokeWidth={2}
               />
             </AreaChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         )}
       </CardContent>
-      <CardFooter className="justify-between border-t px-6 py-4">
+      <CardFooter className="justify-between border-t px-6 py-4 bg-gray-50/50">
         <div>
-          <p className="text-muted-foreground">Total Revenue</p>
-          <p className="text-2xl font-bold">₱{total.toLocaleString()}</p>
+          <p className="text-muted-foreground text-xs uppercase font-semibold">TOTAL REVENUE</p>
+          <p className="text-2xl font-bold font-serif">₱{total.toLocaleString()}</p>
         </div>
       </CardFooter>
     </Card>

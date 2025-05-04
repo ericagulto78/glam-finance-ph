@@ -16,24 +16,24 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, className }) => {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden border-none shadow-md", className)}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-bold mt-1">{value}</h3>
+            <h4 className="text-xs font-semibold text-gray-600 tracking-wider">{title}</h4>
+            <p className="text-2xl font-bold mt-1.5 font-serif tracking-tight">{value}</p>
             {trend && (
-              <div className="flex items-center mt-1">
+              <div className="flex items-center mt-2">
                 <span className={cn(
                   "text-xs font-medium",
-                  trend.positive ? "text-green-600" : "text-red-600"
+                  trend.positive ? "text-emerald-600" : "text-rose-600"
                 )}>
                   {trend.positive ? '↑' : '↓'} {trend.value}
                 </span>
               </div>
             )}
           </div>
-          <div className="p-2 rounded-full bg-accent/30 text-accent-foreground">
+          <div className="p-3 rounded-full bg-accent/30 text-accent-foreground">
             {icon}
           </div>
         </div>
