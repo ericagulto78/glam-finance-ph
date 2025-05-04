@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import PageHeader from '@/components/layout/PageHeader';
@@ -28,8 +29,9 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Bell, Mail, Calendar as CalendarIcon, User, Shield, UserPlus } from 'lucide-react';
+import { Building, Bell, Mail, Calendar as CalendarIcon, User, Shield, UserPlus } from 'lucide-react';
 import { ADMIN_EMAIL } from '@/integrations/supabase/client';
+import BusinessProfileForm from '@/components/BusinessProfileForm';
 
 const Settings = () => {
   const { toast } = useToast();
@@ -89,8 +91,12 @@ const Settings = () => {
       />
 
       <div className="p-6">
-        <Tabs defaultValue="reminders" className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+        <Tabs defaultValue="business" className="space-y-6">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+            <TabsTrigger value="business" className="flex items-center gap-2">
+              <Building size={16} />
+              <span>Business</span>
+            </TabsTrigger>
             <TabsTrigger value="reminders" className="flex items-center gap-2">
               <Bell size={16} />
               <span>Reminders</span>
@@ -114,6 +120,21 @@ const Settings = () => {
               </TabsTrigger>
             )}
           </TabsList>
+
+          {/* Business Information Tab */}
+          <TabsContent value="business">
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Information</CardTitle>
+                <CardDescription>
+                  Manage your business details that appear on invoices and your public profile
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BusinessProfileForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Reminders Tab */}
           <TabsContent value="reminders">

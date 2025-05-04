@@ -21,6 +21,7 @@ const Dashboard = () => {
     upcomingBookings: 0,
     totalClients: 0
   });
+  const [businessName, setBusinessName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,18 +30,31 @@ const Dashboard = () => {
       
       setIsLoading(true);
       try {
+        // Fetch business profile to display personalized greeting
+        const { data: businessProfile } = await supabase
+          .from('business_profiles')
+          .select('name')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (businessProfile?.name) {
+          setBusinessName(businessProfile.name);
+        }
+        
         // Fetch total revenue (from invoices paid)
         const { data: invoicesData, error: invoicesError } = await supabase
           .from('invoices')
           .select('amount')
-          .eq('status', 'paid');
+          .eq('status', 'paid')
+          .eq('user_id', user.id);
         
         if (invoicesError) throw invoicesError;
         
         // Fetch total expenses
         const { data: expensesData, error: expensesError } = await supabase
           .from('expenses')
-          .select('amount');
+          .select('amount')
+          .eq('user_id', user.id);
         
         if (expensesError) throw expensesError;
         
@@ -48,14 +62,16 @@ const Dashboard = () => {
         const { count: upcomingCount, error: upcomingError } = await supabase
           .from('bookings')
           .select('*', { count: 'exact' })
-          .eq('status', 'upcoming');
+          .eq('status', 'upcoming')
+          .eq('user_id', user.id);
         
         if (upcomingError) throw upcomingError;
         
         // Fetch unique clients
         const { data: clientsData, error: clientsError } = await supabase
           .from('bookings')
-          .select('client');
+          .select('client')
+          .eq('user_id', user.id);
         
         if (clientsError) throw clientsError;
         
@@ -84,11 +100,19 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [user]);
 
+  // Get current time to display appropriate greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <div className="h-full">
       <PageHeader 
-        title="Dashboard" 
-        subtitle="Welcome back! Here's an overview of your business finances and bookings."
+        title={`${getTimeBasedGreeting()}, ${user?.email?.split('@')[0] || 'there'}!`}
+        subtitle={businessName ? `Welcome to your ${businessName} dashboard` : "Welcome to your business dashboard"}
       />
       
       <div className="p-6">

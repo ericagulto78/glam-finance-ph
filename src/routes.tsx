@@ -4,6 +4,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
+import Profile from "./pages/Profile";
 import Bookings from "./pages/Bookings";
 import Expenses from "./pages/Expenses";
 import Invoices from "./pages/Invoices";
@@ -12,7 +14,6 @@ import BankAccount from "./pages/BankAccount";
 import ServiceTypes from "./pages/ServiceTypes";
 import Settings from "./pages/Settings";
 import UserManagement from "./pages/UserManagement";
-import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { UserRole } from "./types/auth";
@@ -20,7 +21,7 @@ import { UserRole } from "./types/auth";
 const AppRoutes = () => (
   <Routes>
     {/* Public routes */}
-    <Route path="/" element={<Landing />} />
+    <Route path="/" element={<Home />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Login register={true} />} />
     
@@ -29,6 +30,13 @@ const AppRoutes = () => (
       <ProtectedRoute>
         <MainLayout>
           <Dashboard />
+        </MainLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/profile" element={
+      <ProtectedRoute>
+        <MainLayout>
+          <Profile />
         </MainLayout>
       </ProtectedRoute>
     } />
