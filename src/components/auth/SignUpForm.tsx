@@ -64,21 +64,12 @@ const SignUpForm = ({ email, setEmail, password, setPassword }: SignUpFormProps)
       if (authError) throw authError;
       
       if (authData?.user) {
-        // Create user profile with pending status
-        // Only admins are automatically approved
+        // Note: We're not inserting directly to user_profiles here
+        // The handle_new_user() database trigger will create the profile
+        // Based on the auth.user that was just created
+        
+        // Check if it's the admin email for special messaging
         const isAdminUser = trimmedEmail === ADMIN_EMAIL;
-        
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert([
-            { 
-              user_id: authData.user.id,
-              email: trimmedEmail,
-              status: isAdminUser ? 'approved' : 'pending'
-            }
-          ]);
-        
-        if (profileError) throw profileError;
         
         toast({
           title: isAdminUser ? "Admin account created" : "Account pending approval",

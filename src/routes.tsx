@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
-import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
 import Bookings from "./pages/Bookings";
 import Expenses from "./pages/Expenses";
@@ -21,7 +21,7 @@ import { UserRole } from "./types/auth";
 const AppRoutes = () => (
   <Routes>
     {/* Public routes */}
-    <Route path="/" element={<Home />} />
+    <Route path="/" element={<Landing />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Login register={true} />} />
     
