@@ -456,6 +456,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_or_super_administrator: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       refresh_schema_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined

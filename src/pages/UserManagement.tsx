@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import UserProfileCard from '@/components/admin/UserProfileCard';
+import AddUserDialog from '@/components/admin/AddUserDialog'; // Import the new component
 import { Search, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -31,7 +32,7 @@ const UserManagement: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { toast } = useToast();
 
-  const { approveUser, rejectUser, updateUserRole, userRole } = useAuth();
+  const { approveUser, rejectUser, updateUserRole, userRole, createUser } = useAuth();
 
   useEffect(() => {
     fetchUserProfiles();
@@ -110,16 +111,20 @@ const UserManagement: React.FC = () => {
     fetchUserProfiles();
   };
 
+  const handleUserAdded = () => {
+    fetchUserProfiles();
+  };
+
   return (
     <div className="h-full">
       <PageHeader 
-        title="User Management" 
+        title="USER MANAGEMENT" 
         subtitle="Manage user accounts, roles and permissions" 
         icon={<Users className="h-6 w-6" />}
       />
 
       <div className="p-6 space-y-6">
-        {/* Filters */}
+        {/* Filters and Add User Button */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -156,6 +161,12 @@ const UserManagement: React.FC = () => {
           <Button variant="outline" onClick={fetchUserProfiles}>
             Refresh
           </Button>
+          {/* Add User Dialog */}
+          <AddUserDialog 
+            onUserAdded={handleUserAdded} 
+            createUser={createUser}
+            currentUserRole={userRole}
+          />
         </div>
 
         {isLoading ? (

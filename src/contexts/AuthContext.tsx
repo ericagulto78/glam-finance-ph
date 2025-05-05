@@ -25,7 +25,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkUserRole,
     approveUser: approveUserProfile,
     rejectUser: rejectUserProfile,
-    updateUserRole: updateUserRoleProfile
+    updateUserRole: updateUserRoleProfile,
+    createUser: createUserProfile
   } = useUserProfile();
 
   useEffect(() => {
@@ -252,6 +253,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
   };
+
+  const createUser = async (email: string, password: string, initialRole: UserRole = 'client'): Promise<{ success: boolean; message: string; userId?: string }> => {
+    try {
+      if (!isCurrentUserAdmin && userRole !== 'studio_admin' && userRole !== 'super_administrator') {
+        throw new Error("Only administrators can create users");
+      }
+      
+      // Super administrators can assign any role, studio admins can only assign client and team_member
+      if (userRole === 'studio_admin' && (initialRole === 'super_administrator' || initialRole === 'studio_admin')) {
+        throw new Error("You don't have permission to assign this role");
+      }
+
+      const result = await createUserProfile(email, password, initialRole);
+      
+      if (result.success) {
+        toast({
+          title: "User created",
+          description: result.message,
+        });
+      }
+      
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "User creation failed",
+        description: error.message || "An error occurred during user creation",
+        variant: "destructive",
+      });
+      
+      return {
+        success: false,
+        message: error.message || "An error occurred during user creation"
+      };
+    }
+  };
   
   const value = {
     session,
@@ -264,7 +300,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     approveUser,
     rejectUser,
-    updateUserRole
+    updateUserRole,
+    createUser // Add the new function to the context value
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -98,6 +98,62 @@ export const useUserProfile = () => {
     }
   }, []);
 
+  // New function to create a user
+  const createUser = useCallback(async (email: string, password: string, initialRole: UserRole = 'client'): Promise<{ success: boolean; message: string; userId?: string }> => {
+    try {
+      // Create user in auth system
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+
+      if (authError) {
+        return { 
+          success: false, 
+          message: authError.message 
+        };
+      }
+
+      if (!authData.user) {
+        return { 
+          success: false, 
+          message: 'User created but no user data returned' 
+        };
+      }
+
+      // Create profile for the new user
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: authData.user.id,
+          email: email,
+          role: initialRole,
+          status: 'approved'
+        });
+
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        return { 
+          success: false, 
+          message: `User created but profile creation failed: ${profileError.message}` 
+        };
+      }
+
+      return { 
+        success: true, 
+        message: 'User successfully created and approved', 
+        userId: authData.user.id 
+      };
+    } catch (error: any) {
+      console.error('Error in createUser:', error);
+      return { 
+        success: false, 
+        message: `Error creating user: ${error.message}` 
+      };
+    }
+  }, []);
+
   return {
     userStatus: status,
     userRole: role,
@@ -107,6 +163,7 @@ export const useUserProfile = () => {
     checkUserRole,
     approveUser,
     rejectUser,
-    updateUserRole
+    updateUserRole,
+    createUser // Export the new function
   };
 };

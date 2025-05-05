@@ -16,4 +16,9 @@ export interface AuthContextType {
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
   updateUserRole: (userId: string, role: UserRole) => Promise<void>;
+  createUser: (email: string, password: string, initialRole?: UserRole) => Promise<{
+    success: boolean;
+    message: string;
+    userId?: string;
+  }>;
 }
