@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
@@ -357,8 +358,8 @@ const BankAccount = () => {
                           id="balance"
                           type="number"
                           placeholder="Current balance"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          value={field.value}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       )}
                     />
@@ -375,8 +376,8 @@ const BankAccount = () => {
                           id="undeposited"
                           type="number"
                           placeholder="Undeposited funds"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          value={field.value}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       )}
                     />
