@@ -89,9 +89,9 @@ export function useBankAccounts() {
     try {
       const accountToInsert = {
         type: formData.accountType || 'bank',
-        balance: formData.balance || 0,
-        is_default: formData.isDefault || false,
-        undeposited: formData.undeposited || 0,
+        balance: formData.balance,
+        is_default: formData.isDefault,
+        undeposited: formData.undeposited,
         bank_name: formData.bankName,
         account_name: formData.accountName,
         account_number: formData.accountNumber,

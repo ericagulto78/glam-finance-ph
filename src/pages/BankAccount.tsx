@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
   Card, 
   CardContent, 
@@ -29,7 +27,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft
 } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useBankAccounts, BankAccountFormData } from '@/hooks/useBankAccounts';
 import { useBankTransactions } from '@/hooks/useBankTransactions';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
@@ -41,6 +39,7 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const BankAccount = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -356,8 +355,8 @@ const BankAccount = () => {
                             <Input 
                               type="number" 
                               placeholder="Current balance" 
-                              {...field}
-                              onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              value={field.value}
                             />
                           </FormControl>
                         </FormItem>
@@ -374,8 +373,8 @@ const BankAccount = () => {
                             <Input 
                               type="number" 
                               placeholder="Undeposited funds" 
-                              {...field}
-                              onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              value={field.value}
                             />
                           </FormControl>
                         </FormItem>
@@ -388,11 +387,9 @@ const BankAccount = () => {
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-8">
                           <FormControl>
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-gray-300 text-rose focus:ring-rose"
+                            <Checkbox
                               checked={field.value}
-                              onChange={(e) => field.onChange(e.target.checked)}
+                              onCheckedChange={field.onChange}
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
