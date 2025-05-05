@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
@@ -162,13 +161,15 @@ const EarningsGraph = () => {
     revenue: {
       label: 'Revenue',
       theme: {
-        light: 'rgba(124, 58, 237, 0.8)'
+        light: 'rgba(124, 58, 237, 0.8)',
+        dark: 'rgba(124, 58, 237, 0.9)'
       }
     },
     expenses: {
       label: 'Expenses',
       theme: {
-        light: 'rgba(239, 68, 68, 0.7)'
+        light: 'rgba(239, 68, 68, 0.7)',
+        dark: 'rgba(239, 68, 68, 0.8)'
       }
     }
   };

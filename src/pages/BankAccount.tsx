@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
@@ -352,7 +351,7 @@ const BankAccount = () => {
                     <Controller
                       name="balance"
                       control={control}
-                      rules={{ required: true, valueAsNumber: true }}
+                      rules={{ required: true }}
                       render={({ field }) => (
                         <Input
                           id="balance"
@@ -370,7 +369,7 @@ const BankAccount = () => {
                     <Controller
                       name="undeposited"
                       control={control}
-                      rules={{ required: true, valueAsNumber: true }}
+                      rules={{ required: true }}
                       render={({ field }) => (
                         <Input
                           id="undeposited"
