@@ -34,6 +34,13 @@ import { useBankAccounts, BankAccountFormData } from '@/hooks/useBankAccounts';
 import { useBankTransactions } from '@/hooks/useBankTransactions';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
 import BankAccountCard from '@/components/bank/BankAccountCard';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 
 const BankAccount = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -67,7 +74,7 @@ const BankAccount = () => {
 
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal' | 'transfer'>('deposit');
 
-  const { control, handleSubmit, setValue, watch, reset } = useForm<BankAccountFormData>({
+  const form = useForm<BankAccountFormData>({
     defaultValues: {
       bankName: '',
       accountName: '',
@@ -86,7 +93,7 @@ const BankAccount = () => {
       if (account) {
         setCurrentAccount(account);
         setIsEditing(true);
-        reset({
+        form.reset({
           bankName: account.bank_name,
           accountName: account.account_name,
           accountNumber: account.account_number,
@@ -100,7 +107,7 @@ const BankAccount = () => {
       // No ID provided, we're in "add" mode
       setIsEditing(true);
       setCurrentAccount(null);
-      reset({
+      form.reset({
         bankName: '',
         accountName: '',
         accountNumber: '',
@@ -110,12 +117,12 @@ const BankAccount = () => {
         accountType: 'bank'
       });
     }
-  }, [bankAccounts, accountId, reset]);
+  }, [bankAccounts, accountId, form.reset]);
 
   const handleAddAccount = () => {
     setIsEditing(true);
     setCurrentAccount(null);
-    reset({
+    form.reset({
       bankName: '',
       accountName: '',
       accountNumber: '',
@@ -129,7 +136,7 @@ const BankAccount = () => {
   const handleEditAccount = (account: any) => {
     setIsEditing(true);
     setCurrentAccount(account);
-    reset({
+    form.reset({
       bankName: account.bank_name,
       accountName: account.account_name,
       accountNumber: account.account_number,
@@ -273,145 +280,139 @@ const BankAccount = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName">Bank Name</Label>
-                    <Controller
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
                       name="bankName"
-                      control={control}
-                      rules={{ required: true }}
                       render={({ field }) => (
-                        <Input
-                          id="bankName"
-                          placeholder="e.g., BDO, BPI, UnionBank"
-                          {...field}
-                        />
+                        <FormItem>
+                          <FormLabel>Bank Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., BDO, BPI, UnionBank" {...field} />
+                          </FormControl>
+                        </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="accountName">Account Name</Label>
-                    <Controller
+                    
+                    <FormField
+                      control={form.control}
                       name="accountName"
-                      control={control}
-                      rules={{ required: true }}
                       render={({ field }) => (
-                        <Input
-                          id="accountName"
-                          placeholder="Name on the account"
-                          {...field}
-                        />
+                        <FormItem>
+                          <FormLabel>Account Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Name on the account" {...field} />
+                          </FormControl>
+                        </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber">Account Number</Label>
-                    <Controller
+                    
+                    <FormField
+                      control={form.control}
                       name="accountNumber"
-                      control={control}
-                      rules={{ required: true }}
                       render={({ field }) => (
-                        <Input
-                          id="accountNumber"
-                          placeholder="Your account number"
-                          {...field}
-                        />
+                        <FormItem>
+                          <FormLabel>Account Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your account number" {...field} />
+                          </FormControl>
+                        </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="accountType">Account Type</Label>
-                    <Controller
+                    
+                    <FormField
+                      control={form.control}
                       name="accountType"
-                      control={control}
                       render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select account type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectItem value="bank">Bank</SelectItem>
-                              <SelectItem value="e-wallet">E-Wallet</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                        <FormItem>
+                          <FormLabel>Account Type</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select account type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectItem value="bank">Bank</SelectItem>
+                                <SelectItem value="e-wallet">E-Wallet</SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="balance">Current Balance (₱)</Label>
-                    <Controller
+                    
+                    <FormField
+                      control={form.control}
                       name="balance"
-                      control={control}
-                      rules={{ required: true }}
                       render={({ field }) => (
-                        <Input
-                          id="balance"
-                          type="number"
-                          placeholder="Current balance"
-                          value={field.value}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
+                        <FormItem>
+                          <FormLabel>Current Balance (₱)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="Current balance" 
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                            />
+                          </FormControl>
+                        </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="undeposited">Undeposited Amount (₱)</Label>
-                    <Controller
+                    
+                    <FormField
+                      control={form.control}
                       name="undeposited"
-                      control={control}
-                      rules={{ required: true }}
                       render={({ field }) => (
-                        <Input
-                          id="undeposited"
-                          type="number"
-                          placeholder="Undeposited funds"
-                          value={field.value}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
+                        <FormItem>
+                          <FormLabel>Undeposited Amount (₱)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="Undeposited funds" 
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="isDefault"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-8">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300 text-rose focus:ring-rose"
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Set as default account</FormLabel>
+                          </div>
+                        </FormItem>
                       )}
                     />
                   </div>
                   
-                  <div className="flex items-center pt-8">
-                    <Controller
-                      name="isDefault"
-                      control={control}
-                      render={({ field }) => (
-                        <input
-                          type="checkbox"
-                          id="isDefault"
-                          className="h-4 w-4 rounded border-gray-300 text-rose focus:ring-rose"
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
-                        />
-                      )}
-                    />
-                    <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-900">
-                      Set as default account
-                    </label>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={handleCancel}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                      {currentAccount ? 'Update Account' : 'Add Account'}
+                    </Button>
                   </div>
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {currentAccount ? 'Update Account' : 'Add Account'}
-                  </Button>
-                </div>
-              </form>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         ) : (

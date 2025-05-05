@@ -31,7 +31,7 @@ export function useBankAccounts() {
   
   // Initial bank account form state
   const initialAccountState: Omit<BankAccount, 'id' | 'created_at' | 'updated_at' | 'user_id'> = {
-    type: 'bank', // Changed from 'checking' to 'bank'
+    type: 'bank',
     balance: 0,
     is_default: false,
     undeposited: 0,
@@ -88,7 +88,7 @@ export function useBankAccounts() {
     setIsLoading(true);
     try {
       const accountToInsert = {
-        type: formData.accountType || 'bank', // Use 'bank' as default type
+        type: formData.accountType || 'bank',
         balance: formData.balance || 0,
         is_default: formData.isDefault || false,
         undeposited: formData.undeposited || 0,
@@ -137,7 +137,7 @@ export function useBankAccounts() {
       const { error } = await supabase
         .from('bank_accounts')
         .update({
-          type: 'checking',
+          type: formData.accountType || 'bank',
           balance: formData.balance,
           is_default: formData.isDefault,
           undeposited: formData.undeposited,
