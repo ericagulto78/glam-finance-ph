@@ -71,48 +71,74 @@ export const useBankTransactions = (bankAccountId?: string) => {
   const createTransaction = async (transactionData: TransactionFormData) => {
     setIsLoading(true);
     try {
-      // Fix: Use the exact field name that matches our database structure
-      const accountId = 
-        transactionData.type === 'deposit' ? 
-          transactionData.toAccount : 
-          transactionData.fromAccount;
+      const sourceAccountId = transactionData.type === 'deposit' || transactionData.type === 'transfer' 
+        ? transactionData.toAccount 
+        : transactionData.fromAccount;
+        
+      // For transfers, we need both accounts
+      if (transactionData.type === 'transfer' && (!transactionData.fromAccount || !transactionData.toAccount)) {
+        throw new Error('Both source and destination accounts are required for transfers');
+      }
       
-      if (!accountId) {
+      // For deposits and withdrawals we need at least one account
+      if (!sourceAccountId) {
         throw new Error('Account ID is required');
       }
 
-      // Use the RPC function to increment or decrement the balance based on transaction type
+      // Handle balance updates based on transaction type
       if (transactionData.type === 'deposit') {
+        // Increment balance for deposit
         const { error: balanceError } = await supabase
           .rpc('increment_balance', { 
-            row_id: accountId, 
+            row_id: transactionData.toAccount, 
             amount_to_add: transactionData.amount 
           });
           
         if (balanceError) throw balanceError;
-      } else {
+      } else if (transactionData.type === 'withdrawal') {
+        // Decrement balance for withdrawal
         const { error: balanceError } = await supabase
           .rpc('decrement_balance', { 
-            row_id: accountId, 
+            row_id: transactionData.fromAccount, 
             amount_to_subtract: transactionData.amount 
           });
           
         if (balanceError) throw balanceError;
+      } else if (transactionData.type === 'transfer') {
+        // For transfers, decrement from source and increment destination
+        const { error: sourceError } = await supabase
+          .rpc('decrement_balance', { 
+            row_id: transactionData.fromAccount, 
+            amount_to_subtract: transactionData.amount 
+          });
+          
+        if (sourceError) throw sourceError;
+        
+        const { error: destError } = await supabase
+          .rpc('increment_balance', { 
+            row_id: transactionData.toAccount, 
+            amount_to_add: transactionData.amount 
+          });
+          
+        if (destError) throw destError;
       }
 
-      // Create the transaction record - use bank_account_id that matches DB schema
+      // Create the transaction record
+      const transactionRecord = {
+        // For deposits and withdrawals, use the account that's affected
+        bank_account_id: sourceAccountId,
+        amount: transactionData.amount,
+        type: transactionData.type,
+        description: transactionData.description,
+        date: transactionData.date,
+        fromAccount: transactionData.fromAccount,
+        toAccount: transactionData.toAccount,
+        user_id: (await supabase.auth.getUser()).data.user?.id
+      };
+
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          bank_account_id: accountId,
-          amount: transactionData.amount,
-          type: transactionData.type,
-          description: transactionData.description,
-          date: transactionData.date,
-          fromAccount: transactionData.fromAccount,
-          toAccount: transactionData.toAccount,
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }])
+        .insert([transactionRecord])
         .select()
         .single();
 

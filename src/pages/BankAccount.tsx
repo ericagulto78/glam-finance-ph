@@ -1,14 +1,9 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-
-// UI Components
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import PageHeader from '@/components/layout/PageHeader';
 import {
   Card,
@@ -17,32 +12,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-
-// Define the form data type
-interface BankAccountFormData {
-  bankName: string;
-  accountName: string;
-  accountNumber: string;
-  accountType: string;
-  balance: number;
-  undeposited: number;
-  isDefault: boolean;
-}
+import BankAccountForm, { BankAccountFormData } from '@/components/bank/BankAccountForm';
 
 const BankAccount = () => {
   const navigate = useNavigate();
@@ -51,25 +21,23 @@ const BankAccount = () => {
   const { user } = useAuth();
   const queryParams = new URLSearchParams(location.search);
   const accountId = queryParams.get('id');
-  
-  // Initialize form
-  const form = useForm<BankAccountFormData>({
-    defaultValues: {
-      bankName: '',
-      accountName: '',
-      accountNumber: '',
-      accountType: 'bank',
-      balance: 0,
-      undeposited: 0,
-      isDefault: false,
-    }
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<BankAccountFormData>({
+    bankName: '',
+    accountName: '',
+    accountNumber: '',
+    accountType: 'bank',
+    balance: 0,
+    undeposited: 0,
+    isDefault: false,
   });
 
   // Load data if editing
   useEffect(() => {
     const loadAccountData = async () => {
       if (!accountId || !user) return;
-
+      
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('bank_accounts')
@@ -80,7 +48,7 @@ const BankAccount = () => {
         if (error) throw error;
 
         if (data) {
-          form.reset({
+          setFormData({
             bankName: data.bank_name,
             accountName: data.account_name,
             accountNumber: data.account_number,
@@ -97,29 +65,32 @@ const BankAccount = () => {
           description: error.message,
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadAccountData();
-  }, [accountId, user, form, toast]);
+  }, [accountId, user, toast]);
 
   // Handle form submission
-  const onSubmit = async (formData: BankAccountFormData) => {
+  const onSubmit = async (data: BankAccountFormData) => {
     if (!user) return;
     
+    setIsLoading(true);
     try {
       if (accountId) {
         // Update existing account
         const { error } = await supabase
           .from('bank_accounts')
           .update({
-            bank_name: formData.bankName,
-            account_name: formData.accountName,
-            account_number: formData.accountNumber,
-            type: formData.accountType,
-            balance: formData.balance,
-            undeposited: formData.undeposited,
-            is_default: formData.isDefault,
+            bank_name: data.bankName,
+            account_name: data.accountName,
+            account_number: data.accountNumber,
+            type: data.accountType,
+            balance: data.balance,
+            undeposited: data.undeposited,
+            is_default: data.isDefault,
           })
           .eq('id', accountId);
 
@@ -134,13 +105,13 @@ const BankAccount = () => {
         const { error } = await supabase
           .from('bank_accounts')
           .insert({
-            bank_name: formData.bankName,
-            account_name: formData.accountName,
-            account_number: formData.accountNumber,
-            type: formData.accountType,
-            balance: formData.balance,
-            undeposited: formData.undeposited,
-            is_default: formData.isDefault,
+            bank_name: data.bankName,
+            account_name: data.accountName,
+            account_number: data.accountNumber,
+            type: data.accountType,
+            balance: data.balance,
+            undeposited: data.undeposited,
+            is_default: data.isDefault,
             user_id: user.id,
           });
 
@@ -161,7 +132,13 @@ const BankAccount = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    navigate('/bank-accounts');
   };
 
   return (
@@ -180,141 +157,13 @@ const BankAccount = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="bankName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bank Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., BDO, BPI, UnionBank" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="accountName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Account Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Name on the account" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="accountNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Account Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your account number" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="accountType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Account Type</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select account type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bank">Bank</SelectItem>
-                            <SelectItem value="e-wallet">E-Wallet</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="balance"
-                    render={({ field: { value, onChange, ...restField } }) => (
-                      <FormItem>
-                        <FormLabel>Current Balance (₱)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0" 
-                            value={value}
-                            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-                            {...restField}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="undeposited"
-                    render={({ field: { value, onChange, ...restField } }) => (
-                      <FormItem>
-                        <FormLabel>Undeposited Amount (₱)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0" 
-                            value={value}
-                            onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-                            {...restField}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="isDefault"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 pt-8">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>Set as default account</FormLabel>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => navigate('/bank-accounts')}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {accountId ? 'Update Account' : 'Add Account'}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+            <BankAccountForm
+              defaultValues={formData}
+              onSubmit={onSubmit}
+              onCancel={handleCancel}
+              isEdit={!!accountId}
+              isLoading={isLoading}
+            />
           </CardContent>
         </Card>
       </div>
