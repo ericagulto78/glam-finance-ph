@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, Transaction, TransactionType, castTransaction } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export interface TransactionFormData {
   id?: string;
@@ -68,33 +68,49 @@ export const useBankTransactions = (bankAccountId?: string) => {
     }
   };
 
-  const createTransaction = async (transactionData: Omit<Transaction, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+  const createTransaction = async (transactionData: TransactionFormData) => {
     setIsLoading(true);
     try {
+      // Fix: Use the exact field name that matches our database structure
+      const accountId = 
+        transactionData.type === 'deposit' ? 
+          transactionData.toAccount : 
+          transactionData.fromAccount;
+      
+      if (!accountId) {
+        throw new Error('Account ID is required');
+      }
+
       // Use the RPC function to increment or decrement the balance based on transaction type
       if (transactionData.type === 'deposit') {
-        const { data: balanceData, error: balanceError } = await supabase
+        const { error: balanceError } = await supabase
           .rpc('increment_balance', { 
-            row_id: transactionData.bank_account_id, 
+            row_id: accountId, 
             amount_to_add: transactionData.amount 
           });
           
         if (balanceError) throw balanceError;
       } else {
-        const { data: balanceData, error: balanceError } = await supabase
+        const { error: balanceError } = await supabase
           .rpc('decrement_balance', { 
-            row_id: transactionData.bank_account_id, 
+            row_id: accountId, 
             amount_to_subtract: transactionData.amount 
           });
           
         if (balanceError) throw balanceError;
       }
 
-      // Create the transaction record
+      // Create the transaction record - use bank_account_id that matches DB schema
       const { data, error } = await supabase
         .from('transactions')
         .insert([{
-          ...transactionData,
+          bank_account_id: accountId,
+          amount: transactionData.amount,
+          type: transactionData.type,
+          description: transactionData.description,
+          date: transactionData.date,
+          fromAccount: transactionData.fromAccount,
+          toAccount: transactionData.toAccount,
           user_id: (await supabase.auth.getUser()).data.user?.id
         }])
         .select()
@@ -102,12 +118,14 @@ export const useBankTransactions = (bankAccountId?: string) => {
 
       if (error) throw error;
       
+      // Update local state
       setTransactions(prevTransactions => 
         [castTransaction(data), ...prevTransactions]
       );
       
       return { success: true, data: castTransaction(data) };
     } catch (error: any) {
+      console.error('Transaction error:', error);
       toast({
         title: "Error creating transaction",
         description: error.message || "An error occurred while creating the transaction",
@@ -127,18 +145,7 @@ export const useBankTransactions = (bankAccountId?: string) => {
   };
 
   const addTransaction = async () => {
-    // Convert from the form data structure to the transaction structure
-    const transactionToAdd: any = {
-      bank_account_id: newTransaction.type === 'deposit' ? newTransaction.toAccount : newTransaction.fromAccount,
-      amount: newTransaction.amount,
-      type: newTransaction.type,
-      description: newTransaction.description,
-      date: newTransaction.date,
-      fromAccount: newTransaction.fromAccount,
-      toAccount: newTransaction.toAccount
-    };
-
-    const result = await createTransaction(transactionToAdd);
+    const result = await createTransaction(newTransaction);
     if (result.success) {
       setIsAddDialogOpen(false);
       setNewTransaction({

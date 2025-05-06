@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/layout/PageHeader';
@@ -9,7 +9,7 @@ import BankAccountCard from '@/components/bank/BankAccountCard';
 import BankTransactionDialog from '@/components/bank/BankTransactionDialog';
 import { useBankTransactions } from '@/hooks/useBankTransactions';
 import { useInvoices } from '@/hooks/useInvoices';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 const BankAccounts: React.FC = () => {
@@ -21,7 +21,7 @@ const BankAccounts: React.FC = () => {
   
   const {
     bankAccounts,
-    isLoading,
+    isLoading: isAccountsLoading,
     totalStats,
     setAccountDefault,
     deleteBankAccount,
@@ -42,12 +42,25 @@ const BankAccounts: React.FC = () => {
     .filter(invoice => invoice.status === 'paid' && invoice.payment_method === 'cash')
     .reduce((sum, invoice) => sum + invoice.amount, 0);
 
+  // Use useCallback to prevent unnecessary re-renders
+  const loadData = useCallback(async () => {
+    try {
+      await fetchBankAccounts();
+    } catch (error: any) {
+      console.error('Error loading bank accounts:', error);
+      toast({
+        title: "Error loading accounts",
+        description: error.message || "Failed to load bank accounts",
+        variant: "destructive"
+      });
+    }
+  }, [fetchBankAccounts, toast]);
+  
   useEffect(() => {
-    fetchBankAccounts();
-  }, []);
+    loadData();
+  }, [loadData]);
 
   const handleAddAccount = () => {
-    // Use the navigate function to go to the BankAccount page without an ID
     navigate('/bank-account');
   };
 
@@ -57,18 +70,55 @@ const BankAccounts: React.FC = () => {
     handleNewTransactionChange('type', type);
     if (type === 'deposit') {
       handleNewTransactionChange('toAccount', accountId);
+      handleNewTransactionChange('fromAccount', '');
     } else if (type === 'withdrawal') {
+      handleNewTransactionChange('fromAccount', accountId);
+      handleNewTransactionChange('toAccount', '');
+    } else {
       handleNewTransactionChange('fromAccount', accountId);
     }
     setIsTransactionDialogOpen(true);
   };
 
-  const handleSetDefault = (id: string) => {
-    setAccountDefault(id);
+  const handleSetDefault = async (id: string) => {
+    try {
+      await setAccountDefault(id);
+      toast({
+        title: "Default account updated",
+        description: "Your default account has been set successfully"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error setting default",
+        description: error.message || "Failed to set default account",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditAccount = (accountId: string) => {
     navigate(`/bank-account?id=${accountId}`);
+  };
+
+  const handleSubmitTransaction = async () => {
+    try {
+      const result = await addTransaction();
+      if (result.success) {
+        setIsTransactionDialogOpen(false);
+        // Reload data after transaction
+        await loadData();
+        toast({
+          title: "Transaction successful",
+          description: "Your transaction has been processed"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Transaction failed",
+        description: error.message || "An error occurred processing your transaction",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -103,7 +153,7 @@ const BankAccounts: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {isLoading ? (
+          {isAccountsLoading ? (
             // Loading skeletons
             Array.from({ length: 3 }).map((_, index) => (
               <Card key={index} className="animate-pulse">
@@ -124,7 +174,18 @@ const BankAccounts: React.FC = () => {
                 key={account.id}
                 account={account}
                 onEdit={() => handleEditAccount(account.id)}
-                onDelete={() => deleteBankAccount(account.id)}
+                onDelete={async () => {
+                  try {
+                    await deleteBankAccount(account.id);
+                    loadData(); // Refresh after deletion
+                  } catch (error: any) {
+                    toast({
+                      title: "Delete failed",
+                      description: error.message || "Failed to delete account",
+                      variant: "destructive"
+                    });
+                  }
+                }}
                 onSetDefault={() => handleSetDefault(account.id)}
                 onDeposit={(id) => handleTransactionClick(id, 'deposit')}
                 onWithdraw={(id) => handleTransactionClick(id, 'withdrawal')}
@@ -142,7 +203,7 @@ const BankAccounts: React.FC = () => {
         isLoading={isTransactionLoading}
         formData={newTransaction}
         onFormChange={handleNewTransactionChange}
-        onSubmit={addTransaction}
+        onSubmit={handleSubmitTransaction}
       />
     </div>
   );

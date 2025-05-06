@@ -1,12 +1,8 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  supabase, 
-  BankAccount,
-  castBankAccount 
-} from '@/integrations/supabase/client';
+import { supabase, BankAccount, castBankAccount } from '@/integrations/supabase/client';
 
 export interface BankAccountFormData {
   bankName: string;
@@ -49,8 +45,8 @@ export function useBankAccounts() {
     totalCashOnHand: bankAccounts.reduce((sum, account) => sum + account.balance + account.undeposited, 0)
   };
 
-  // Fetch bank accounts
-  const fetchBankAccounts = async () => {
+  // Fetch bank accounts - made into a useCallback to avoid recreation on every render
+  const fetchBankAccounts = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -58,9 +54,12 @@ export function useBankAccounts() {
       const { data, error } = await supabase
         .from('bank_accounts')
         .select('*')
+        .order('is_default', { ascending: false })
         .order('bank_name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       // Cast the data to ensure it matches our BankAccount type
       const typedAccounts = data?.map(account => castBankAccount(account)) || [];
@@ -69,17 +68,21 @@ export function useBankAccounts() {
       console.error('Error fetching bank accounts:', error);
       toast({
         title: "Error fetching bank accounts",
-        description: error.message,
+        description: error.message || "Failed to load your accounts",
         variant: "destructive",
       });
+      setBankAccounts([]); // Set to empty array in case of error
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, toast]);
 
+  // Load data when user changes
   useEffect(() => {
-    fetchBankAccounts();
-  }, [user]);
+    if (user) {
+      fetchBankAccounts();
+    }
+  }, [user, fetchBankAccounts]);
 
   // Add a new bank account
   const addBankAccount = async (formData: BankAccountFormData) => {
@@ -98,8 +101,6 @@ export function useBankAccounts() {
         user_id: user.id,
       };
 
-      console.log('Inserting bank account:', accountToInsert);
-
       const { data, error } = await supabase
         .from('bank_accounts')
         .insert([accountToInsert])
@@ -116,13 +117,16 @@ export function useBankAccounts() {
         title: "Bank account added",
         description: "The bank account has been successfully added",
       });
+      
+      return data;
     } catch (error: any) {
       console.error('Error adding bank account:', error);
       toast({
         title: "Error adding bank account",
-        description: error.message,
+        description: error.message || "Failed to add bank account",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -160,9 +164,10 @@ export function useBankAccounts() {
       console.error('Error updating bank account:', error);
       toast({
         title: "Error updating bank account",
-        description: error.message,
+        description: error.message || "Failed to update bank account",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -182,8 +187,8 @@ export function useBankAccounts() {
       if (error) throw error;
       
       setIsDeleteDialogOpen(false);
-      // Immediately fetch bank accounts after deleting
-      await fetchBankAccounts();
+      // Update local state to remove the deleted account
+      setBankAccounts(prev => prev.filter(account => account.id !== id));
       toast({
         title: "Bank account deleted",
         description: `Bank account has been deleted.`,
@@ -192,9 +197,10 @@ export function useBankAccounts() {
       console.error('Error deleting bank account:', error);
       toast({
         title: "Error deleting bank account",
-        description: error.message,
+        description: error.message || "Failed to delete bank account",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -220,8 +226,13 @@ export function useBankAccounts() {
         
       if (error) throw error;
       
-      // Refresh accounts list
-      await fetchBankAccounts();
+      // Update local state to reflect the change
+      setBankAccounts(prev => 
+        prev.map(account => ({
+          ...account,
+          is_default: account.id === id
+        }))
+      );
       
       toast({
         title: "Default account updated",
@@ -231,9 +242,10 @@ export function useBankAccounts() {
       console.error('Error setting default account:', error);
       toast({
         title: "Error setting default account",
-        description: error.message,
+        description: error.message || "Failed to set default account",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -262,8 +274,12 @@ export function useBankAccounts() {
 
   // Filter bank accounts based on search term
   const filteredAccounts = bankAccounts.filter(account => {
-    const matchesSearch = account.bank_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         account.account_name.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!searchTerm) return true;
+    
+    const matchesSearch = 
+      account.bank_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      account.account_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      account.account_number.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesSearch;
   });

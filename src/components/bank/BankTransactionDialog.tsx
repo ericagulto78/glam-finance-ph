@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import {
 import { TransactionType } from '@/integrations/supabase/client';
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { TransactionFormData } from '@/hooks/useBankTransactions';
+import { useToast } from '@/hooks/use-toast';
 
 interface BankTransactionDialogProps {
   isOpen: boolean;
@@ -40,13 +41,40 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
   onFormChange,
   onSubmit,
 }) => {
-  const { bankAccounts, fetchBankAccounts } = useBankAccounts();
+  const { bankAccounts, isLoading: isAccountsLoading } = useBankAccounts();
+  const { toast } = useToast();
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchBankAccounts();
+    // Validate form data
+    const checkFormValidity = () => {
+      const { amount, type, description, fromAccount, toAccount } = formData;
+      
+      if (amount <= 0) return true;
+      if (!description.trim()) return true;
+      
+      if (type === 'deposit' && !toAccount) return true;
+      if (type === 'withdrawal' && !fromAccount) return true;
+      if (type === 'transfer' && (!fromAccount || !toAccount || fromAccount === toAccount)) return true;
+
+      return false;
+    };
+
+    setIsSubmitDisabled(checkFormValidity());
+  }, [formData]);
+
+  const handleSubmit = async () => {
+    try {
+      await onSubmit();
+    } catch (error: any) {
+      console.error('Transaction submission error:', error);
+      toast({
+        title: "Transaction failed",
+        description: error.message || "An error occurred processing the transaction",
+        variant: "destructive",
+      });
     }
-  }, [isOpen, fetchBankAccounts]);
+  };
 
   const getTransactionTypeLabel = (type: TransactionType) => {
     switch (type) {
@@ -76,6 +104,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
             <Select 
               value={formData.type}
               onValueChange={(value) => onFormChange('type', value as TransactionType)}
+              disabled={isLoading}
             >
               <SelectTrigger id="type">
                 <SelectValue placeholder="Select transaction type" />
@@ -96,6 +125,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
                 type="date" 
                 value={formData.date}
                 onChange={(e) => onFormChange('date', e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -103,8 +133,10 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
               <Input 
                 id="amount" 
                 type="number" 
-                value={formData.amount.toString()}
-                onChange={(e) => onFormChange('amount', parseInt(e.target.value) || 0)}
+                value={formData.amount}
+                onChange={(e) => onFormChange('amount', Number(e.target.value) || 0)}
+                disabled={isLoading}
+                min={0}
               />
             </div>
           </div>
@@ -117,6 +149,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
               onChange={(e) => onFormChange('description', e.target.value)}
               placeholder="Enter transaction details..."
               rows={2}
+              disabled={isLoading}
             />
           </div>
           
@@ -126,6 +159,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
               <Select 
                 value={formData.fromAccount || ''}
                 onValueChange={(value) => onFormChange('fromAccount', value)}
+                disabled={isLoading || isAccountsLoading}
               >
                 <SelectTrigger id="fromAccount">
                   <SelectValue placeholder="Select source account" />
@@ -147,6 +181,7 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
               <Select 
                 value={formData.toAccount || ''}
                 onValueChange={(value) => onFormChange('toAccount', value)}
+                disabled={isLoading || isAccountsLoading}
               >
                 <SelectTrigger id="toAccount">
                   <SelectValue placeholder="Select destination account" />
@@ -163,12 +198,12 @@ const BankTransactionDialog: React.FC<BankTransactionDialogProps> = ({
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
           <Button 
-            onClick={onSubmit}
-            disabled={isLoading}
+            onClick={handleSubmit}
+            disabled={isLoading || isSubmitDisabled}
           >
             {isLoading ? 'Processing...' : 'Process Transaction'}
           </Button>
