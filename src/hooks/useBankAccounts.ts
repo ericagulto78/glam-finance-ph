@@ -3,7 +3,9 @@ import { useBankAccountsCore } from './useBankAccountsCore';
 import { useBankAccountActions } from './useBankAccountActions';
 import { useBankAccountsState } from './useBankAccountsState';
 
-export { useBankAccountActions, BankAccountFormData } from './useBankAccountActions';
+// Fix the re-export with proper 'export type' syntax
+export { useBankAccountActions } from './useBankAccountActions';
+export type { BankAccountFormData } from './useBankAccountActions';
 
 export function useBankAccounts() {
   const core = useBankAccountsCore();
