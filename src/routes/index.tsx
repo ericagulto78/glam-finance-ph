@@ -10,6 +10,7 @@ import Expenses from '@/pages/Expenses';
 import BankAccounts from '@/pages/BankAccounts';
 import BankAccount from '@/pages/BankAccount';
 import ServiceTypes from '@/pages/ServiceTypes';
+import UserManagement from '@/pages/UserManagement';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 
@@ -33,6 +34,11 @@ const AppRoutes: React.FC = () => {
         <Route path="bank-accounts" element={<BankAccounts />} />
         <Route path="bank-account" element={<BankAccount />} />
         <Route path="service-types" element={<ServiceTypes />} />
+        <Route path="admin/users" element={
+          <ProtectedRoute requiredRole="studio_admin">
+            <UserManagement />
+          </ProtectedRoute>
+        } />
       </Route>
       
       <Route path="*" element={<NotFound />} />

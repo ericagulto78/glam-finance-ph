@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,9 +47,11 @@ const UserManagement: React.FC = () => {
     try {
       console.log('Fetching user profiles...');
       
+      // Order by created_at to show newest profiles first
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, user_id, email, full_name, status, role, created_at');
+        .select('id, user_id, email, full_name, status, role, created_at')
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching user profiles:', error);
@@ -96,18 +99,54 @@ const UserManagement: React.FC = () => {
   };
 
   const handleApproveUser = async (userId: string) => {
-    await approveUser(userId);
-    fetchUserProfiles();
+    try {
+      await approveUser(userId);
+      toast({
+        title: "User approved",
+        description: "User has been approved successfully"
+      });
+      fetchUserProfiles();
+    } catch (error: any) {
+      toast({
+        title: "Error approving user",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRejectUser = async (userId: string) => {
-    await rejectUser(userId);
-    fetchUserProfiles();
+    try {
+      await rejectUser(userId);
+      toast({
+        title: "User rejected",
+        description: "User has been rejected successfully"
+      });
+      fetchUserProfiles();
+    } catch (error: any) {
+      toast({
+        title: "Error rejecting user",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
-    await updateUserRole(userId, newRole);
-    fetchUserProfiles();
+    try {
+      await updateUserRole(userId, newRole);
+      toast({
+        title: "Role updated",
+        description: `User's role has been updated successfully`
+      });
+      fetchUserProfiles();
+    } catch (error: any) {
+      toast({
+        title: "Error updating role",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleUserAdded = () => {
