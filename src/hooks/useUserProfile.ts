@@ -13,7 +13,7 @@ export const useUserProfile = () => {
         .from('user_profiles')
         .select('status')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -33,7 +33,7 @@ export const useUserProfile = () => {
         .from('user_profiles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user role:', error);
@@ -164,6 +164,6 @@ export const useUserProfile = () => {
     approveUser,
     rejectUser,
     updateUserRole,
-    createUser // Export the new function
+    createUser
   };
 };

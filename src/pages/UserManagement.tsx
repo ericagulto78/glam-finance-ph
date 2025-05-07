@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import PageHeader from '@/components/layout/PageHeader';
 import UserProfileCard from '@/components/admin/UserProfileCard';
-import AddUserDialog from '@/components/admin/AddUserDialog'; // Import the new component
+import AddUserDialog from '@/components/admin/AddUserDialog';
 import { Search, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -45,12 +44,12 @@ const UserManagement: React.FC = () => {
   const fetchUserProfiles = async () => {
     setIsLoading(true);
     try {
-      // Use the select query with a simple column selection to avoid RLS recursion
+      console.log('Fetching user profiles...');
+      
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, user_id, email, full_name, status, role, created_at')
-        .order('created_at', { ascending: false });
-
+        .select('id, user_id, email, full_name, status, role, created_at');
+      
       if (error) {
         console.error('Error fetching user profiles:', error);
         toast({
