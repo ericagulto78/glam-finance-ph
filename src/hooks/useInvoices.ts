@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +24,7 @@ export interface InvoiceFormData {
   booking_id: string | null;
   notes: string;
   description?: string;
+  paid_amount?: number;
 }
 
 export function useInvoices() {
@@ -360,6 +362,64 @@ export function useInvoices() {
     }
   };
 
+  // Record a partial payment for an invoice
+  const recordPartialPayment = async (
+    invoiceId: string, 
+    amount: number, 
+    paymentMethod: PaymentMethod, 
+    bankAccountId?: string, 
+    notes?: string
+  ) => {
+    setIsLoading(true);
+    try {
+      // Insert the payment record
+      const { error: paymentError } = await supabase
+        .from('invoice_payments')
+        .insert({
+          invoice_id: invoiceId,
+          amount: amount,
+          payment_method: paymentMethod,
+          bank_account_id: paymentMethod === 'bank' ? bankAccountId : null,
+          notes: notes || '',
+          user_id: user.id,
+          payment_date: new Date().toISOString().split('T')[0]
+        });
+
+      if (paymentError) throw paymentError;
+
+      // If paid to a bank account, update the balance
+      if (paymentMethod === 'bank' && bankAccountId) {
+        const { error: balanceError } = await supabase
+          .rpc('increment_balance', { 
+            row_id: bankAccountId, 
+            amount_to_add: amount 
+          });
+          
+        if (balanceError) throw balanceError;
+      }
+      
+      // Fetch the updated invoices (the trigger will automatically update the invoice status)
+      await fetchInvoices();
+      
+      toast({
+        title: "Partial payment recorded",
+        description: `Payment of ₱${amount.toLocaleString()} has been recorded`,
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error recording partial payment:', error);
+      toast({
+        title: "Error recording partial payment",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     invoices: filteredInvoices,
     searchTerm,
@@ -385,6 +445,7 @@ export function useInvoices() {
     deleteInvoice,
     addBookingInvoice,
     recordPayment,
+    recordPartialPayment,
     fetchInvoices
   };
 }

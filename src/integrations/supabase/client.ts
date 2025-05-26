@@ -109,7 +109,7 @@ export const castExpense = (data: any): Expense => ({
   user_id: data.user_id
 });
 
-export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+export type InvoiceStatus = 'draft' | 'pending' | 'partial' | 'paid' | 'overdue' | 'cancelled';
 export type PaymentMethod = 'card' | 'cash' | 'bank_transfer' | 'check' | 'unpaid' | 'bank';
 
 export interface Invoice {
@@ -128,6 +128,7 @@ export interface Invoice {
   updated_at: string;
   user_id: string;
   description?: string;
+  paid_amount?: number;
 }
 
 // Helper function to cast database types to our interface
@@ -146,7 +147,35 @@ export const castInvoice = (data: any): Invoice => ({
   created_at: data.created_at,
   updated_at: data.updated_at,
   user_id: data.user_id,
-  description: data.description || ''
+  description: data.description || '',
+  paid_amount: data.paid_amount || 0
+});
+
+export interface InvoicePayment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  payment_method: string;
+  bank_account_id: string | null;
+  payment_date: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
+// Helper function to cast database types to our interface
+export const castInvoicePayment = (data: any): InvoicePayment => ({
+  id: data.id,
+  invoice_id: data.invoice_id,
+  amount: data.amount || 0,
+  payment_method: data.payment_method,
+  bank_account_id: data.bank_account_id,
+  payment_date: data.payment_date,
+  notes: data.notes || '',
+  created_at: data.created_at,
+  updated_at: data.updated_at,
+  user_id: data.user_id
 });
 
 export interface ServiceType {

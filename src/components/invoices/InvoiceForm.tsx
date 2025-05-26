@@ -126,6 +126,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="partial">Partial</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
             </SelectContent>
