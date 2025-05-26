@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, DollarSign, TrendingUp, UserCheck, Calculator, CircleDollarSign, ChartLine } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, UserCheck, Calculator, CircleDollarSign, ChartLine, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import StatCard from '@/components/dashboard/StatCard';
@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format, subMonths, startOfYear } from 'date-fns';
+import { format, subMonths, startOfYear, startOfMonth } from 'date-fns';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -25,7 +25,9 @@ const Dashboard = () => {
     ytdGross: 0,
     ytdNet: 0,
     currentMonthEarnings: 0,
-    previousMonthEarnings: 0
+    previousMonthEarnings: 0,
+    mtdNetEarnings: 0,
+    receivables: 0
   });
   const [businessName, setBusinessName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -62,8 +64,7 @@ const Dashboard = () => {
         // Fetch total revenue (from invoices paid)
         const { data: invoicesData, error: invoicesError } = await supabase
           .from('invoices')
-          .select('amount, issue_date')
-          .eq('status', 'paid')
+          .select('amount, issue_date, status')
           .eq('user_id', user.id);
         
         if (invoicesError) throw invoicesError;
@@ -97,12 +98,19 @@ const Dashboard = () => {
         const uniqueClients = new Set(clientsData.map(booking => booking.client)).size;
         
         // Calculate total revenue from paid invoices
-        const totalRevenue = invoicesData?.reduce((sum, invoice) => sum + invoice.amount, 0) || 0;
+        const paidInvoices = invoicesData?.filter(invoice => invoice.status === 'paid') || [];
+        const totalRevenue = paidInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
+        
+        // Calculate receivables from unpaid invoices (pending, draft, overdue)
+        const unpaidInvoices = invoicesData?.filter(invoice => 
+          invoice.status === 'pending' || invoice.status === 'draft' || invoice.status === 'overdue'
+        ) || [];
+        const receivables = unpaidInvoices.reduce((sum, invoice) => sum + invoice.amount, 0);
         
         // Calculate YTD gross revenue
-        const ytdGross = invoicesData
-          ?.filter(invoice => invoice.issue_date >= startOfYearStr)
-          .reduce((sum, invoice) => sum + invoice.amount, 0) || 0;
+        const ytdGross = paidInvoices
+          .filter(invoice => invoice.issue_date >= startOfYearStr)
+          .reduce((sum, invoice) => sum + invoice.amount, 0);
         
         // Calculate YTD expenses
         const ytdExpenses = expensesData
@@ -113,9 +121,9 @@ const Dashboard = () => {
         const ytdNet = ytdGross - ytdExpenses;
         
         // Calculate current month earnings
-        const currentMonthRevenue = invoicesData
-          ?.filter(invoice => invoice.issue_date >= currentMonthStr)
-          .reduce((sum, invoice) => sum + invoice.amount, 0) || 0;
+        const currentMonthRevenue = paidInvoices
+          .filter(invoice => invoice.issue_date >= currentMonthStr)
+          .reduce((sum, invoice) => sum + invoice.amount, 0);
         
         const currentMonthExpenses = expensesData
           ?.filter(expense => expense.date >= currentMonthStr)
@@ -123,12 +131,15 @@ const Dashboard = () => {
         
         const currentMonthEarnings = currentMonthRevenue - currentMonthExpenses;
         
+        // Calculate MTD net earnings (same as current month earnings in this context)
+        const mtdNetEarnings = currentMonthEarnings;
+        
         // Calculate previous month earnings
-        const previousMonthRevenue = invoicesData
-          ?.filter(invoice => 
+        const previousMonthRevenue = paidInvoices
+          .filter(invoice => 
             invoice.issue_date >= previousMonthStartStr && 
             invoice.issue_date <= previousMonthEndStr)
-          .reduce((sum, invoice) => sum + invoice.amount, 0) || 0;
+          .reduce((sum, invoice) => sum + invoice.amount, 0);
         
         const previousMonthExpenses = expensesData
           ?.filter(expense => 
@@ -149,7 +160,9 @@ const Dashboard = () => {
           ytdGross,
           ytdNet,
           currentMonthEarnings,
-          previousMonthEarnings
+          previousMonthEarnings,
+          mtdNetEarnings,
+          receivables
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -239,21 +252,39 @@ const Dashboard = () => {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-cyan-50 to-white overflow-hidden">
+          <Card className="bg-gradient-to-br from-teal-50 to-white overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase">CURRENT MONTH</h3>
-                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.currentMonthEarnings.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase">MTD NET EARNINGS</h3>
+                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.mtdNetEarnings.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')} earnings</p>
                 </div>
-                <div className="p-3 rounded-full bg-cyan-100 text-cyan-600">
+                <div className="p-3 rounded-full bg-teal-100 text-teal-600">
                   <CircleDollarSign size={20} />
                 </div>
               </div>
             </CardContent>
           </Card>
           
+          <Card className="bg-gradient-to-br from-orange-50 to-white overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase">RECEIVABLES</h3>
+                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.receivables.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">From unpaid invoices</p>
+                </div>
+                <div className="p-3 rounded-full bg-orange-100 text-orange-600">
+                  <Receipt size={20} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Previous Month Card */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="bg-gradient-to-br from-emerald-50 to-white overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
