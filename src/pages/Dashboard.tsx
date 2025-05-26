@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Calendar, DollarSign, TrendingUp, UserCheck, Calculator, CircleDollarSign, ChartLine, Receipt } from 'lucide-react';
+import { Calendar, DollarSign, TrendingUp, UserCheck, Calculator, CircleDollarSign, ChartLine, Receipt, TrendingDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageHeader from '@/components/layout/PageHeader';
 import StatCard from '@/components/dashboard/StatCard';
@@ -27,6 +26,8 @@ const Dashboard = () => {
     currentMonthEarnings: 0,
     previousMonthEarnings: 0,
     mtdNetEarnings: 0,
+    mtdGrossEarnings: 0,
+    mtdExpenses: 0,
     receivables: 0
   });
   const [businessName, setBusinessName] = useState('');
@@ -120,19 +121,21 @@ const Dashboard = () => {
         // Calculate YTD net earnings
         const ytdNet = ytdGross - ytdExpenses;
         
-        // Calculate current month earnings
-        const currentMonthRevenue = paidInvoices
+        // Calculate MTD gross earnings (current month revenue from paid invoices)
+        const mtdGrossEarnings = paidInvoices
           .filter(invoice => invoice.issue_date >= currentMonthStr)
           .reduce((sum, invoice) => sum + invoice.amount, 0);
         
-        const currentMonthExpenses = expensesData
+        // Calculate MTD expenses
+        const mtdExpenses = expensesData
           ?.filter(expense => expense.date >= currentMonthStr)
           .reduce((sum, expense) => sum + expense.amount, 0) || 0;
         
-        const currentMonthEarnings = currentMonthRevenue - currentMonthExpenses;
+        // Calculate MTD net earnings 
+        const mtdNetEarnings = mtdGrossEarnings - mtdExpenses;
         
-        // Calculate MTD net earnings (same as current month earnings in this context)
-        const mtdNetEarnings = currentMonthEarnings;
+        // Calculate current month earnings (for backward compatibility)
+        const currentMonthEarnings = mtdNetEarnings;
         
         // Calculate previous month earnings
         const previousMonthRevenue = paidInvoices
@@ -162,6 +165,8 @@ const Dashboard = () => {
           currentMonthEarnings,
           previousMonthEarnings,
           mtdNetEarnings,
+          mtdGrossEarnings,
+          mtdExpenses,
           receivables
         });
       } catch (error) {
@@ -252,16 +257,16 @@ const Dashboard = () => {
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-teal-50 to-white overflow-hidden">
+          <Card className="bg-gradient-to-br from-green-50 to-white overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase">MTD NET EARNINGS</h3>
-                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.mtdNetEarnings.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')} earnings</p>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase">MTD GROSS EARNINGS</h3>
+                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.mtdGrossEarnings.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')} revenue</p>
                 </div>
-                <div className="p-3 rounded-full bg-teal-100 text-teal-600">
-                  <CircleDollarSign size={20} />
+                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <DollarSign size={20} />
                 </div>
               </div>
             </CardContent>
@@ -283,15 +288,45 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        {/* Previous Month Card */}
+        {/* MTD and Previous Month Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-gradient-to-br from-teal-50 to-white overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase">MTD NET EARNINGS</h3>
+                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.mtdNetEarnings.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')} net</p>
+                </div>
+                <div className="p-3 rounded-full bg-teal-100 text-teal-600">
+                  <CircleDollarSign size={20} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-red-50 to-white overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase">MTD EXPENSES</h3>
+                  <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.mtdExpenses.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{format(new Date(), 'MMMM yyyy')} expenses</p>
+                </div>
+                <div className="p-3 rounded-full bg-red-100 text-red-600">
+                  <TrendingDown size={20} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           <Card className="bg-gradient-to-br from-emerald-50 to-white overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground uppercase">PREVIOUS MONTH</h3>
                   <p className="text-2xl font-bold tracking-tight mt-1 font-serif">₱{stats.previousMonthEarnings.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{format(subMonths(new Date(), 1), 'MMMM yyyy')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{format(subMonths(new Date(), 1), 'MMMM yyyy')} net</p>
                 </div>
                 <div className="p-3 rounded-full bg-emerald-100 text-emerald-600">
                   <CircleDollarSign size={20} />
